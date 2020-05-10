@@ -5,6 +5,19 @@
 .mentor-crm-wrap{
     font-family: 'Oswald', sans-serif;
 }
+.mentor-crm-wrap h1, .mentor-crm-wrap>h2:first-child {
+    font-size: 23px;
+    font-weight: 400;
+    margin: 0;
+    padding: 9px 0 4px 0;
+    line-height: 1.3;
+}
+.mentor-crm-wrap:before,
+.mentor-crm-wrap:after{
+  content: " ";
+  display: table;
+  clear: both;
+}
 .mentor-crm-header {
     padding: 10px;
     margin-bottom: 20px;
@@ -130,8 +143,13 @@ table.mentor-table-basic tr:hover .mentor-crm-btn-edit{
     opacity:1;
 }
 .mentor-steps-wraps {
-    width: 60%;
+    width: 40%;
     float: left;
+}
+.mentor-manager-wraps {
+    width: calc(60% - 40px);
+    float: left;
+    margin-left: 20px;
 }
 .mentor-form{
   margin-left: -10px;
@@ -146,7 +164,7 @@ table.mentor-table-basic tr:hover .mentor-crm-btn-edit{
 .form-group label{
     display: block;
 }
-.form-group input{
+.form-group input:not[type="checkbox"]:not[type="radio"]{
     width: 100%;
 }
 .color-picker {
@@ -219,8 +237,248 @@ ul.mentor-crm-pagination li {
     width: auto;
     margin: 15px 0px;
 }
-.mentor-logo-wraps {
-    width: 35%;
-    float: left;
-    margin-left: 30px;
+.mentor-general-wraps {
+    width: 100%;
+}
+/*FROM DETAILS*/
+.crm-row:before,
+.crm-row:after{
+  content: " ";
+  display: table;
+  clear: both;
+}
+[class*="crm-col"]{
+  width: 100%;
+  padding: 0 15px;
+  float: left;
+  position: relative;
+  box-sizing: border-box;
+}
+.crm-col-10{
+  width: 10%;
+}
+.crm-col-20{
+  width: 20%;
+}
+.crm-col-30{
+  width: 30%;
+}
+.crm-col-40{
+  width: 40%;
+}
+.crm-col-50{
+  width: 50%;
+}
+.crm-col-70{
+  width: 70%;
+}
+.mentor-crm-detail{
+  background: #ececec;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+h1.lead-title {
+    padding: 0 15px;
+    display: block;
+    color: #7e8993;
+}
+.mentor-crm-detail > h2 {
+    display: block;
+    border-bottom: 1px solid #ccc;
+    padding: 20px;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+.mentor-crm-detail-content {
+    padding: 20px;
+    margin-bottom: 2em;
+}
+.mentor-crm-detail-content p {
+    margin: 0 0 .5em 0;
+    font-size: 1.1em;
+}
+.mentor-crm-wrap. form-wrap label {
+    display: block;
+    padding: 0;
+}
+.form-wrap {
+    margin-bottom: .5em;
+}
+.mentor-crm-wrap .form-wrap input:not([type="checkbox"]):not([type="radio"]), .mentor-crm-wrap .form-wrap select {
+    width: 100%;
+    max-width: 100%;
+    border-color: #ccc;
+    line-height: 3;
+    height: 44px;
+    transition: all .3s ease-in-out;
+}
+.form-wrap textarea {
+    width: 100%;
+    min-height: 100px;
+    border-color: #ccc;
+    transition: all .3s ease-in-out;
+}
+.mentor-crm-wrap .form-wrap input:focus,
+.mentor-crm-wrap .form-wrap select:focus,
+.mentor-crm-wrap .form-wrap textarea:focus {
+    border-color: #7e8993;
+    color: #000;
+    box-shadow: 0 0 0 1px #7e8993;
+}
+.mentor-crm-wrap .form-wrap button {
+    cursor: pointer;
+    -webkit-appearance: none;
+    border: 1px solid #7e8993;
+    background: #7e8993;
+    color: #fff;
+    padding: 10px 25px;
+    border-radius: 8px;
+    transition: all .3s ease-in-out;
+    outline: none;
+}
+.mentor-crm-wrap .form-wrap button:hover,
+.mentor-crm-wrap .form-wrap button:focus {
+    color: #7e8993 !important;
+    background: #fff !important;
+    box-shadow: 0 0 0 1px #7e8993;
+}
+.mentor-crm-submit {
+    margin-top: 1em;
+}
+.mentor-crm-wrap .cost-wrap span {
+    bottom: 12.5px;
+    left: 25px;
+    position: absolute;
+    border-color: #ccc;
+}
+.mentor-crm-wrap .cost-wrap input {
+    padding-left: 50px;
+}
+.mentor-crm-wrap .switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 40px;
+  padding: 0;
+  margin: 0.5em 0;
+}
+.mentor-crm-wrap .switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.mentor-crm-wrap .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #8f8f8f;
+  -webkit-transition: .4s;
+  transition: .4s;
+  height: 24px;
+}
+.mentor-crm-wrap .slider:before {
+    content: "NO";
+    position: absolute;
+    height: 30px;
+    width: 30px;
+    text-align: center;
+    line-height: 30px;
+    left: 0px;
+    bottom: -4px;
+    background-color: #fff;
+    -webkit-transition: .4s;
+    transition: .4s;
+    color: #7e8993;
+    border: 2px solid #7e8993;
+}
+.mentor-crm-wrap .switch input:checked + .slider:before {
+  content: "SI";
+  background-color: #7e8993;
+  color: #fff;
+}
+.mentor-crm-wrap .switch input:focus + .slider {
+  box-shadow: 0 0 1px #000;
+}
+.mentor-crm-wrap .switch input:checked + .slider:before {
+  -webkit-transform: translateX(36px);
+  -ms-transform: translateX(36px);
+  transform: translateX(36px);
+}
+.mentor-crm-wrap .slider.round {
+  border-radius: 34px;
+}
+.mentor-crm-wrap .slider.round:before {
+  border-radius: 50%;
+}
+.mentor-toasty {
+    background: #22272d;
+    padding: 15px;
+    color: #fff;
+    position: fixed;
+    right: 20px;
+    bottom: 100px;
+    z-index: 9999;
+    border-radius: 14px;
+    transition: all .3s ease-in-out;
+    transform: translateX(600%);
+}
+.mentor-toasty.mentor-toasty-open {
+    transform: translateX(0%);
+}
+.mentor-select-manage {
+    top: -28px;
+    position: absolute;
+    right: 15px;
+}
+.toggle-form {
+    background: #7e8993;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    color: #fff;
+    border-radius: 50%;
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    cursor: pointer;
+    transition: all .3s ease-in-out;
+    opacity: .6;
+}
+.toggle-form:hover {
+    opacity: 1;
+}
+.toggle-form-wrap input,
+.toggle-form-wrap select{
+    transition: all .3s ease-in-out;
+}
+.toggle-form-wrap button{
+    transform: scale(1);
+}
+.toggle-form-wrap.toggle-form-true input, .toggle-form-wrap.toggle-form-true select {
+    -webkit-appearance: none;
+    background: #ececec;
+    border: none;
+}
+.toggle-form-wrap.toggle-form-true select {
+    -webkit-appearance: none;
+    background: #ececec no-repeat right 5px top 55%;
+    border: none;
+}
+.toggle-form-wrap.toggle-form-true button{
+    transform: scale(0);
+}
+.lead-log-detail {
+    max-height: 300px;
+    overflow: auto;
+}
+label.mentor_crm_payment_method_selector {
+    margin: 15px;
+}
+.mentor_crm_payment_options {
+    padding: 15px 0;
 }

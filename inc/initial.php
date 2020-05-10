@@ -1,5 +1,5 @@
 <?php
-$steps = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}mentor_steps ORDER BY order_val,SID DESC");
+$steps = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}mentor_steps ORDER BY order_val,SID ASC");
 $sid = $steps[0]->SID;
 $tag_color = $steps[0]->color;
 $tag_title = $steps[0]->title;

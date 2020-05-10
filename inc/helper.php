@@ -1,12 +1,12 @@
 <?php
+function get_amount_in_cents( $amount ) {
+    return (int) ( $amount * 100 );
+}
 function validate_changes_log($validate_field_logs,$lid){
 	global $wpdb,$_POST;
 	$row_to_validate = $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}mentor_leads WHERE LID = {$lid}");
 	foreach ($validate_field_logs as $key => $log) {
-		//echo $_POST[$key].' '.$row_to_validate->{$key};
-		//die;
 	    if ($row_to_validate->{$key} != $_POST[$key]) {
-	    	//echo $log.shortcode_text_crm($key,$row_to_validate->{$key},$_POST[$key]);
 	        $wpdb->insert($wpdb->prefix."mentor_logs",
 				array(
 					'lead_ID'=>$_POST['lid'],
@@ -58,7 +58,69 @@ function shortcode_text_crm($type,$from,$to){
 	}
 	return $return;
 }
-$payment_state_text = ['PENDIENTE','PAGADO'];
+function mentor_email($to,$subject,$body,$type = 1,$options = array(),$headers = null){
+    global $wpdb,$phpmailer;
+    $logo = get_option('mentor_crm_logo');
+    $site_url = home_url();
+    $body ='<div style="margin:0;font-family: Arial, Helvetica, sans-serif;background: #f7f5ff;width: 100%;height: 100%;">
+            <div style="max-width: 640px;display: block;margin: 0 auto;padding: 30px;">
+                <div style="width: 100%;height: 80px;background: #fff;border-bottom:2px solid #e0dede;">
+                    <a href="'.$site_url.'" style="display: block;margin: 0 auto;width: 200px;padding-top: 10px;">
+                    <img src="'.$logo.'" style="width: 100%;">
+                    </a>
+                </div>
+                <div style="background:#fff;padding:30px 50px;width:100%;display:block;max-width: 100%;box-sizing: border-box;" class="mensaje">'
+                .$body.
+                '</div>
+                <div style="width: 100%;height: 80px;background: #e0dede;text-align:center">
+                    <p>Clínica Dhara &copy; 2020</p>
+                </div>
+            </div>
+            </div>';
+    if ($type == 2) {
+        if (!empty($options['lid'])) {
+            $imgs_src = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}mentor_dhara_lead_images WHERE LID = 1");
+            add_action( 'phpmailer_init', function(&$phpmailer)use($imgs_src){
+                $phpmailer->SMTPKeepAlive = true;
+                $phpmailer->IsHTML(true);
+                foreach ($imgs_src as $key => $img) {            
+                    $file = $img->image;
+                    $uid = 'SecureFile'.$img->LIMGID; //will map it to this UID
+                    $finfo = new finfo(FILEINFO_MIME);
+                    $extension = explode('/', mime_content_type($file))[1];
+                    $name = 'SecureFile'.$img->LIMGID.'.'.$extension;
+                    switch ($extension) {
+                        case 'gif':
+                            $img = str_replace('data:image/gif;base64,', '', $file);
+                            break;
+                        case 'jpeg':
+                            $img = str_replace('data:image/jpeg;base64,', '', $file);
+                            break;
+                        case 'jpg':
+                            $img = str_replace('data:image/jpg;base64,', '', $file);
+                            break;
+                        default:
+                            $img = str_replace('data:image/png;base64,', '', $file);
+                            break;
+                    }
+                    $img = str_replace(' ', '+', $img);
+                    $data = base64_decode($img);
+                    $phpmailer->addStringEmbeddedImage($data,$uid,$name);
+                    $phpmailer->addStringAttachment($data,$name);     
+                }
+            });
+        }
+    }
+    if (empty($headers)) {
+       $headers = array('Content-Type: text/html; charset=UTF-8','From: Dev Mentor <dev@bementor.co>');
+    }
+    wp_mail($to,$subject,$body,$headers);
+}
+//add_action( 'plugins_loaded', 'email_test' );
+function email_test(){
+//    mentor_email('jdmmtm@gmail.com','test '.time(),'TEST DE HTML');
+}
+$payment_state_text = array(1=>'PENDIENTE',2=>'PAGADO',3=>'CANCELADO/EXP.');
 $managers = array(
     0 => 'POR CONFIRMAR',
     1 => 'Dr. Hernán Amarís',

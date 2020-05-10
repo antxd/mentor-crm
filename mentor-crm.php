@@ -6,10 +6,39 @@ Description: CRM Adaptable, provisto por https://bementor.co/
 Author: Jose M
 Version: 1.0-310320
 Author URI: https://jdmm.xyz
+
+={zOCvi@GF?7
+
 */
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
+$mentor_crm_wompi_sanbox = (empty(get_option('mentor_crm_payment_sanbox')))?false:get_option('mentor_crm_payment_sanbox');
+$mentor_crm_payment_method = (empty(get_option('mentor_crm_payment_method')))?1:get_option('mentor_crm_payment_method');
+if ($mentor_crm_wompi_sanbox) {
+  if ($mentor_crm_payment_method == 1) {
+    define('PUB_KEY_WOMPI', get_option('mentor_crm_pub_key_wompi_test'));
+    define('PRV_KEY_WOMPI', get_option('mentor_crm_prv_key_wompi_test'));
+    define('ENDPOINT_WOMPI', 'https://sandbox.wompi.co/v1/');
+  }
+  if ($mentor_crm_payment_method == 2) {
+    $payu_test = '<input name="test" type="hidden" value="1" >';
+    define('ENDPOINT_PAYU', 'https://sandbox.checkout.payulatam.com/ppp-web-gateway-payu/"');
+  }
+}else{
+  if ($mentor_crm_payment_method == 1) {
+    define('PUB_KEY_WOMPI', get_option('mentor_crm_pub_key_wompi'));
+    define('PRV_KEY_WOMPI', get_option('mentor_crm_prv_key_wompi'));
+    define('ENDPOINT_WOMPI', 'https://production.wompi.co/v1/');
+  }
+  if ($mentor_crm_payment_method == 2) {
+    $payu_test = '';
+    define('ENDPOINT_PAYU', 'https://checkout.payulatam.com/ppp-web-gateway-payu/"');
+  }
+}
 include_once 'inc/helper.php';
 include_once 'inc/shortcodes.php';
+include_once 'inc/routes.php';
+include_once 'inc/options.php';
+include_once 'inc/payments_gateway.php';
 function install_mentor_crm(){
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
@@ -59,7 +88,7 @@ function install_mentor_crm(){
             `last_update` datetime DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY  (`LOID`)
           ) $charset_collate;";
-    $table_name3 = $wpdb->prefix . "mentor_dhara_lead_images"; 
+    $table_name3 = $wpdb->prefix . "mentor_leads_images"; 
     $sql3 = "
           CREATE TABLE IF NOT EXISTS `{$table_name3}` (
               `LIMGID` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -68,15 +97,42 @@ function install_mentor_crm(){
               `created` datetime DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY  (`LIMGID`)
           ) $charset_collate;";
+    $table_name4 = $wpdb->prefix . "mentor_orders"; 
+    $sql4 = "
+          CREATE TABLE IF NOT EXISTS `{$table_name4}` (
+              `ORID` mediumint(9) NOT NULL AUTO_INCREMENT,
+              `LID` mediumint(9) NOT NULL,
+              `reference` varchar(255) NOT NULL,
+              `amount` decimal(13,2) DEFAULT '0',
+              `extra_info` varchar(255) DEFAULT NULL,
+              `created` datetime DEFAULT CURRENT_TIMESTAMP,
+              `updated` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              `state` tinyint(4) DEFAULT '1',
+            PRIMARY KEY  (`ORID`)
+          ) $charset_collate;";
+    $table_name5 = $wpdb->prefix . "mentor_managers"; 
+    $sql5 = "
+          CREATE TABLE IF NOT EXISTS `{$table_name5}` (
+              `MID` mediumint(9) NOT NULL AUTO_INCREMENT,
+              `name` varchar(255) NOT NULL,
+              `email` varchar(255) NOT NULL,
+              `phone` varchar(255) NOT NULL,
+              `updated` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY  (`MID`)
+          ) $charset_collate;";
     require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
     dbDelta( $sql );
     dbDelta( $sql1 );
     dbDelta( $sql2 );
-    dbDelta( $sql3 ); 
+    dbDelta( $sql3 );
+    dbDelta( $sql4 );
+    dbDelta( $sql5 );
     add_role( 'crm_manager', 'CRM Manager', array( 'read' => true,'edit_posts' => false,'delete_posts' => false,'level_0' => true, 'manage_options' => true) );
     if(empty(get_option( 'mentor_crm_logo' ))){
         update_option( 'mentor_crm_logo', plugins_url('/mentor-crm/assets/logo-mentor-s.png') );
     }
+    josem_plugin_rewrites();
+    flush_rewrite_rules();
 }
 register_activation_hook( __FILE__, 'install_mentor_crm' );
 
@@ -112,212 +168,6 @@ function mentor_screen_initial() {
   }else{
       include_once 'inc/initial.php';
   }
-}
-function mentor_screen_options() {
-  global $wpdb,$crmcountries;
-  $notices = '';
-  wp_enqueue_media();
-  wp_enqueue_style( 'wp-color-picker' );
-  wp_enqueue_script( 'wp-color-picker' );
-  wp_enqueue_style( 'mentor-crm', plugins_url('/mentor-crm/assets/admin.css',false,'1.0.0') );
-  if (!empty($_GET['delete-sid'])) {
-      $wpdb->delete($wpdb->prefix.'mentor_steps', array( 'SID' => $_GET['delete-sid'] ) );
-      $notices .='<div class="notice notice-error is-dismissible">
-                      <p>Registro #'.$_GET['delete-sid'].' Eliminado!</p>
-                  </div>';
-  }
-  if (!empty($_POST)) {
-    if (!empty($_POST['mentor_nonce_options'])) {
-        if( !isset( $_POST['mentor_nonce_options'] ) || !wp_verify_nonce( $_POST['mentor_nonce_options'], 'mentor_form_options' ) ) return;
-        update_option( 'mentor_crm_logo', $_POST['mentor_crm_logo_url'] );
-        update_option( 'mentor_crm_cliente_name', $_POST['mentor_crm_cliente_name'] );
-        if (!empty($_POST['mentor_crm_security_password'])) {
-            update_option( 'mentor_crm_security_password', md5($_POST['mentor_crm_security_password']) );
-        }  
-        $notices .='<div class="notice notice-success is-dismissible">
-                        <p>Opciones Actualizadas</p>
-                    </div>';
-    }
-    if (!empty($_POST['mentor_nonce_steps'])) {
-      if( !isset( $_POST['mentor_nonce_steps'] ) || !wp_verify_nonce( $_POST['mentor_nonce_steps'], 'mentor_form_steps' ) ) return;
-      if ($_POST['sid'] == 0) {
-          $wpdb->insert( 
-            $wpdb->prefix.'mentor_steps', 
-            array( 
-              'title' => strtoupper($_POST['title']), 
-              'color' => $_POST['color'],
-              'order_val' => $_POST['order_val'] 
-            )
-          );
-          $new_sid = $wpdb->insert_id;
-          $notices .='<div class="notice notice-success is-dismissible">
-                          <p>Registro #'.$new_sid.' creado</p>
-                      </div>';
-      }else{
-          $wpdb->update( 
-            $wpdb->prefix.'mentor_steps', 
-            array( 
-              'title' => strtoupper($_POST['title']), 
-              'color' => $_POST['color'],
-              'order_val' => $_POST['order_val']
-            ), 
-            array( 'SID' => $_POST['sid'] )
-          );
-        $notices .='<div class="notice notice-success is-dismissible">
-                          <p>Registro #'.$_POST['sid'].' Actualizado</p>
-                      </div>';  
-      }
-    }
-  }
-  //if ( !current_user_can( 'manage_options' ) )  {
-    //wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
-  //}
-  $sid = (!empty($_GET['sid']))?$_GET['sid']:0;
-  $order_val = 0;
-  $title = $color = '';
-  $save_button = (!empty($_GET['sid']))?'Guardar':'Crear';
-  if ($sid > 0) {
-    $sid_data = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}mentor_steps WHERE SID={$sid}");
-    $title = $sid_data->title;
-    $color = $sid_data->color;
-    $order_val = $sid_data->order_val;
-  }
-  echo $notices;
-  include_once 'inc/loader.php';
-  ?>
-  <div class="wrap mentor-crm-wrap">
-    <div class="mentor-steps-wraps">
-      <h1>Mentor CRM Pasos</h1>
-      <div class="mentor-crm-box">
-        <form method="post" class="mentor-form">
-            <?php wp_nonce_field( 'mentor_form_steps','mentor_nonce_steps'); ?>
-            <input type="hidden" name="sid" value="<?php echo $sid; ?>">
-            <div class="form-group">
-                <label><?php _e('Título'); ?></label>
-                <input type="text" name="title" value="<?php echo $title; ?>" required>
-            </div>
-            <div class="form-group">
-                <label><?php _e('Orden'); ?></label>
-                <input type="number" name="order_val" value="<?php echo $order_val; ?>" min="0" required>
-            </div>
-            <div class="form-group color-picker">
-                <label><?php _e('Color'); ?></label>
-                <input type="text" name="color" value="<?php echo $color; ?>" class="color-field" required>
-            </div>
-            <div class="form-group">
-                <label>&nbsp;</label>
-                <button type="submit" class="button button-primary">
-                    <?php echo $save_button; ?>
-                </button>
-            </div>
-        </form>
-        <table class="mentor-table-basic">
-          <tr>
-            <th>ID</th>
-            <th>Título</th>
-            <th>Color</th>
-            <th>Orden</th>
-            <th style="width: 150px;"></th>
-          </tr>
-          <?php 
-            $steps = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}mentor_steps ORDER BY SID ASC" ); 
-            foreach ($steps as $key => $step) {
-                echo '<tr>
-                        <td>#'.$step->SID.'</td>
-                        <td>'.$step->title.'</td>
-                        <td>
-                        <span style="background-color:'.$step->color.';width:20px;height:20px;border-radius:50%;display:inline-block;vertical-align:middle;"></span> 
-                        '.$step->color.'
-                        </td>
-                        <td>'.$step->order_val.'</td>
-                        <td>
-                          <a href="'.admin_url('admin.php?page=mentor-crm-options').'&sid='.$step->SID.'" class="button button-primary">
-                              Editar
-                          </a>
-                          <a href="'.admin_url('admin.php?page=mentor-crm-options').'&delete-sid='.$step->SID.'" class="button button-secondary" onclick="return confirm(\'¿Quieres eliminar el regitro #'.$step->SID.'?\')">
-                              Eliminar
-                          </a>
-                        </td>
-                      </tr>';
-            }
-          ?>
-        </table>
-      </div>
-    </div>
-    <div class="mentor-logo-wraps">
-      <h1>Mentor CRM Opciones</h1>
-      <div class="mentor-crm-box">
-        <form method="post" class="mentor-form">
-            <?php wp_nonce_field( 'mentor_form_options','mentor_nonce_options'); ?>
-            <img src="<?php echo get_option( 'mentor_crm_logo' ); ?>" id="mentor_crm_logo_helper">
-            <input type="hidden" name="mentor_crm_logo_url" id="mentor_crm_logo_url" value="<?php echo get_option( 'mentor_crm_logo' ); ?>">
-            <button type='button' class="button-secondary" id="mentor_crm_logo_select">Seleccionar</button><br><br>
-            <label>Título</label><br>
-            <input type="text" name="mentor_crm_cliente_name" value="<?php echo get_option('mentor_crm_cliente_name'); ?>"><br><br>
-            <label>Clave de Seguridad</label><br>
-            <input type="text" name="mentor_crm_security_password" value="">
-            <?php if (empty(get_option('mentor_crm_security_password'))) { echo "<small>Clave no seteada</small>"; } ?>
-            <br><br>
-            <button type='submit' class="button-primary" id="mentor_crm_logo_select">Guardar</button>
-        </form>
-      </div>
-    </div>
-  </div>
-  <script type="text/javascript">
-    (function( $ ) {
-        $(function() {
-            $('.color-field').wpColorPicker();
-            // Uploading files
-            var file_frame;
-            //var wp_media_post_id = wp.media.model.settings.post.id; // Store the old id
-            //var set_to_post_id = <?php echo $my_saved_attachment_post_id; ?>; // Set this
-            $('#mentor_crm_logo_select').on('click', function( event ){
-              event.preventDefault();
-              // If the media frame already exists, reopen it.
-              if ( file_frame ) {
-                // Set the post ID to what we want
-                //file_frame.uploader.uploader.param( 'post_id', set_to_post_id );
-                // Open frame
-                file_frame.open();
-                return;
-              } 
-              //else {
-                // Set the wp.media post id so the uploader grabs the ID we want when initialised
-                //wp.media.model.settings.post.id = set_to_post_id;
-              //}
-
-              // Create the media frame.
-              file_frame = wp.media.frames.file_frame = wp.media({
-                title: 'Select a image to upload',
-                button: {
-                  text: 'Use this image',
-                },
-                multiple: false // Set to true to allow multiple files to be selected
-              });
-
-              // When an image is selected, run a callback.
-              file_frame.on( 'select', function() {
-                // We set multiple to false so only get one image from the uploader
-                attachment = file_frame.state().get('selection').first().toJSON();
-                // Do something with attachment.id and/or attachment.url here
-                $( '#mentor_crm_logo_helper' ).attr( 'src', attachment.url );
-                $( '#mentor_crm_logo_url' ).val( attachment.url );
-
-                  // Restore the main post ID
-                  //wp.media.model.settings.post.id = wp_media_post_id;
-              });
-                // Finally, open the modal
-                file_frame.open();
-            });
-
-            // Restore the main ID when the add media button is pressed
-            //$( 'a.add_media' ).on( 'click', function() {
-            //  wp.media.model.settings.post.id = wp_media_post_id;
-            //});
-        });
-    })( jQuery );
-  </script>
-  <?php
 }
 
 add_action( 'admin_init', 'mentor_crm_remove_menu_pages' );
@@ -451,34 +301,3 @@ function mentor_lead_capture() {
   $return = array('msg'=>'ok');
   wp_send_json($return);
 }
-
-
-function josem_plugin_query_vars($vars) {
-  $vars[] = 'crm-mentor-mode';
-  $vars[] = 'data-lead';
-  return $vars;
-}
-
-add_filter( 'template_include', 'portfolio_page_template', 99 );
-function portfolio_page_template( $template ) {
-  global $wpdb;
-    if ( get_query_var( 'crm-mentor-mode' )  == 'view-file-secure' ) {
-      $data = unserialize(base64_decode(get_query_var( 'data-lead' )));
-      $datetime1 = new DateTime(date('Y-m-d',$data['created']));//start time
-      $datetime2 = new DateTime(date('Y-m-d'));//end time
-      $interval = $datetime1->diff($datetime2);
-      if (!empty($data)) {
-          if (get_option('mentor_crm_security_password') == $data['key'] && $interval->d < 10) {
-            echo "<body style='padding:0;margin:0;background:#000;'>";
-            $img_src = $wpdb->get_row("SELECT image FROM {$wpdb->prefix}mentor_dhara_lead_images WHERE LIMGID = ".$data['LIMGID'])->image;
-            echo "<img src='{$img_src}' style='margin:auto;display:block;'>";
-            echo "</body>";
-          }else{
-            die('Key dont match! or URL was Expired');
-          }
-      }
-      exit;
-    }
-    return $template;
-}
-add_filter('query_vars', 'josem_plugin_query_vars');
