@@ -11,26 +11,26 @@ Author URI: https://jdmm.xyz
 
 */
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
-$mentor_crm_wompi_sanbox = (empty(get_option('mentor_crm_payment_sanbox')))?false:get_option('mentor_crm_payment_sanbox');
-$mentor_crm_payment_method = (empty(get_option('mentor_crm_payment_method')))?1:get_option('mentor_crm_payment_method');
-if ($mentor_crm_wompi_sanbox) {
-  if ($mentor_crm_payment_method == 1) {
+define( 'MENTOR_CRM_SANBOX',get_option('mentor_crm_payment_sanbox'));
+define( 'MENTOR_CRM_PAYMENT_METHOD',get_option('mentor_crm_payment_method'));
+//$mentor_crm_wompi_sanbox = (empty(get_option('mentor_crm_payment_sanbox')))?false:get_option('mentor_crm_payment_sanbox');
+//$mentor_crm_payment_method = (empty(get_option('mentor_crm_payment_method')))?1:get_option('mentor_crm_payment_method');
+if (MENTOR_CRM_SANBOX) {
+  if (MENTOR_CRM_PAYMENT_METHOD == 1) {
     define('PUB_KEY_WOMPI', get_option('mentor_crm_pub_key_wompi_test'));
     define('PRV_KEY_WOMPI', get_option('mentor_crm_prv_key_wompi_test'));
     define('ENDPOINT_WOMPI', 'https://sandbox.wompi.co/v1/');
   }
-  if ($mentor_crm_payment_method == 2) {
-    $payu_test = '<input name="test" type="hidden" value="1" >';
+  if (MENTOR_CRM_PAYMENT_METHOD == 2) {
     define('ENDPOINT_PAYU', 'https://sandbox.checkout.payulatam.com/ppp-web-gateway-payu/"');
   }
 }else{
-  if ($mentor_crm_payment_method == 1) {
+  if (MENTOR_CRM_PAYMENT_METHOD == 1) {
     define('PUB_KEY_WOMPI', get_option('mentor_crm_pub_key_wompi'));
     define('PRV_KEY_WOMPI', get_option('mentor_crm_prv_key_wompi'));
     define('ENDPOINT_WOMPI', 'https://production.wompi.co/v1/');
   }
-  if ($mentor_crm_payment_method == 2) {
-    $payu_test = '';
+  if (MENTOR_CRM_PAYMENT_METHOD == 2) {
     define('ENDPOINT_PAYU', 'https://checkout.payulatam.com/ppp-web-gateway-payu/"');
   }
 }
@@ -39,6 +39,8 @@ include_once 'inc/shortcodes.php';
 include_once 'inc/routes.php';
 include_once 'inc/options.php';
 include_once 'inc/payments_gateway.php';
+//`payment_state` tinyint(4) DEFAULT '0',
+//`cost` decimal(13,2) DEFAULT NULL,
 function install_mentor_crm(){
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
@@ -61,10 +63,8 @@ function install_mentor_crm(){
             `date` date DEFAULT NULL,
             `time` time DEFAULT NULL,
             `confirm_date` tinyint(4) NULL DEFAULT '0',
-            `cost` decimal(13,2) DEFAULT NULL,
             `last_update` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             `created` datetime DEFAULT CURRENT_TIMESTAMP,
-            `payment_state` tinyint(4) DEFAULT '0',
             `state` tinyint(4) DEFAULT '1',
             PRIMARY KEY  (`LID`)
           ) $charset_collate;";
@@ -104,6 +104,7 @@ function install_mentor_crm(){
               `LID` mediumint(9) NOT NULL,
               `reference` varchar(255) NOT NULL,
               `amount` decimal(13,2) DEFAULT '0',
+              `method_master` tinyint(4) DEFAULT '1',
               `extra_info` varchar(255) DEFAULT NULL,
               `created` datetime DEFAULT CURRENT_TIMESTAMP,
               `updated` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -126,11 +127,19 @@ function install_mentor_crm(){
     dbDelta( $sql2 );
     dbDelta( $sql3 );
     dbDelta( $sql4 );
+    $wpdb->query($wpdb->prepare("ALTER TABLE `{$table_name4}` AUTO_INCREMENT = 1000;"));
     dbDelta( $sql5 );
     add_role( 'crm_manager', 'CRM Manager', array( 'read' => true,'edit_posts' => false,'delete_posts' => false,'level_0' => true, 'manage_options' => true) );
     if(empty(get_option( 'mentor_crm_logo' ))){
         update_option( 'mentor_crm_logo', plugins_url('/mentor-crm/assets/logo-mentor-s.png') );
     }
+    if(empty(get_option( 'mentor_crm_payment_sanbox' ))){
+        update_option( 'mentor_crm_payment_sanbox', true );
+    }
+    if(empty(get_option( 'mentor_crm_payment_method' ))){
+        update_option( 'mentor_crm_payment_method', 1 );
+    }
+
     josem_plugin_rewrites();
     flush_rewrite_rules();
 }
@@ -174,9 +183,9 @@ add_action( 'admin_init', 'mentor_crm_remove_menu_pages' );
 function mentor_crm_remove_menu_pages() {
   if ( wp_get_current_user()->roles[0] == 'crm_manager' ){
     foreach ($GLOBALS['menu'] as $key => $value) {
-        if ($value[2] != 'mentor-crm-admin') {
-            remove_menu_page($value[2]);
-        }
+      if ($value[2] != 'mentor-crm-admin') {
+          remove_menu_page($value[2]);
+      }
     }
   }
 }
@@ -189,9 +198,6 @@ function mentor_lead_detail() {
   // update log logic
   $_POST['state'] = $state;
   $_POST['confirm_date'] = $confirm_date;
-  if (!empty($_POST['email_button'])) {
-      //logic send email
-  }
   $validate_changes = array(
       'step_ID'=>'Cambio de Categoria',
       'reason' => 'Cambio en Procedimiento',
@@ -199,8 +205,6 @@ function mentor_lead_detail() {
       'date' => 'Cambio de Fecha',
       'time' => 'Cambio de Hora',
       'confirm_date' => 'Se confirma la Cita',
-      'cost' => 'Se ajusta el costo',
-      'payment_state' => 'Cambio de estatus del Pago',
       'state' =>  'Cambio de estatus del cliente'
   ); 
   validate_changes_log($validate_changes,$_POST['lid']);
@@ -211,15 +215,16 @@ function mentor_lead_detail() {
     'date' => $_POST['date'],
     'time' => $_POST['time'],
     'confirm_date' => $confirm_date,
-    'cost' => $_POST['cost'],
-    'payment_state' => $_POST['payment_state'],
     'state' => $state
 
   ),array('LID'=>$_POST['lid']));
   if (!empty($_POST['payment_button'])) {
       // send email logic
   }
-  $return = array('message'  => 'Información Actualizada!','action' => 'location.reload();');
+  if (!empty($_POST['email_button'])) {
+      //logic send email
+  }
+  $return = array('message' => 'Información Actualizada!','action' => 'location.reload();');
   wp_send_json($return);
 }
 add_action( 'wp_ajax_mentor_lead_personadetail', 'mentor_lead_personadetail' );
@@ -237,9 +242,40 @@ function mentor_lead_personadetail() {
     'city' => $_POST['city']
   ),array('LID'=>$_POST['lid']));
   // update log logic
-  $return = array('message'  => 'Información Actualizada!','action' => "jQuery('.toggle-form-wrap').toggleClass('toggle-form-true')");
+  $return = array('message' => 'Información Actualizada!','action' => "jQuery('.toggle-form-wrap').toggleClass('toggle-form-true')");
   wp_send_json($return);
 }
+
+
+add_action( 'wp_ajax_mentor_order_detail', 'mentor_order_detail' );
+function mentor_order_detail() {
+  global $wpdb;
+  if ($_POST['orid'] == 0) {
+      $ORID = CreateOrder($_POST['lid'],$_POST['cost'],false);
+      if (!empty($ORID)) {
+          wp_send_json(array('message' => 'Botón creado exitosamente','action' => "location.reload();"));
+      }
+  }else{
+      $wpdb->update( 
+          "{$wpdb->prefix}mentor_orders", 
+          array( 'amount' => floatval($_POST['cost']),'state'=>$_POST['state'] ), 
+          array( 'ORID' => $_POST['orid']), 
+          array( '%f','%d' ), 
+          array( '%d' ) 
+      );
+      wp_send_json(array('message' => 'Botón creado exitosamente','action' => "location.reload();"));
+  }
+}
+
+add_action( 'wp_ajax_mentor_get_order_detail', 'mentor_get_order_detail' );
+function mentor_get_order_detail() {
+  global $wpdb;
+  wp_send_json($wpdb->get_row("SELECT * FROM {$wpdb->prefix}mentor_orders WHERE ORID = ".$_POST['orid']));
+}
+
+
+
+
 add_action( 'wp_ajax_mentor_lead_capture', 'mentor_lead_capture' );
 add_action( 'wp_ajax_nopriv_mentor_lead_capture', 'mentor_lead_capture' );
 function mentor_lead_capture() {
@@ -263,6 +299,7 @@ function mentor_lead_capture() {
         'country' => $_POST['country'],
         'city' => $_POST['city'],
         'date' => $_POST['date'],
+        'time' => '09:00:00',
         'reason' => $_POST['reason'],
         'process' => $_POST['tag-consultatipo'],
         'lead_comment' =>$_POST['comments']
@@ -270,6 +307,7 @@ function mentor_lead_capture() {
     $wpdb->insert($wpdb->prefix.'mentor_leads',$array_data);
     $LID = $wpdb->insert_id;
   }
+  $payment_url = CreateOrder($LID);
   if(isset($_FILES)){
     foreach ($_FILES['lead_image']['tmp_name'] as $key => $lead_image) {
       if( !empty( $_FILES['image']['error'][$key])) {
@@ -289,7 +327,7 @@ function mentor_lead_capture() {
         $image = 'data:image/'.$imageFileType.';base64,'.$image_base64;
         // Insert record
         $wpdb->insert( 
-          $wpdb->prefix.'mentor_dhara_lead_images', 
+          $wpdb->prefix.'mentor_leads_images', 
           array( 
             'LID' => $LID, 
             'image' => $image,
@@ -298,6 +336,6 @@ function mentor_lead_capture() {
       }
     }
   }
-  $return = array('msg'=>'ok');
+  $return = array('msg'=>'ok','payment_url'=>$payment_url);
   wp_send_json($return);
 }

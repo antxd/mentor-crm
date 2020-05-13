@@ -90,11 +90,12 @@ function mentor_screen_options() {
             array( 'MID' => $_POST['mid'] )
           );
         $notices .='<div class="notice notice-success is-dismissible">
-                          <p>Especialista #'.$_POST['sid'].' Actualizado</p>
+                          <p>Especialista #'.$_POST['mid'].' Actualizado</p>
                       </div>';  
       }
     }
   }//end POST
+  
   $sid = (!empty($_GET['sid']))?$_GET['sid']:0;
   $mid = (!empty($_GET['mid']))?$_GET['mid']:0;
   $order_val = 0;
@@ -113,8 +114,8 @@ function mentor_screen_options() {
     $email = $mid_data->email;
     $phone = $mid_data->phone;
   }
-  $mentor_crm_payment_method = (empty(get_option('mentor_crm_payment_method')))?1:get_option('mentor_crm_payment_method');
-  $mentor_crm_payment_sanbox = (empty(get_option('mentor_crm_payment_sanbox')))?false:get_option('mentor_crm_payment_sanbox');
+  $mentor_crm_payment_method = MENTOR_CRM_PAYMENT_METHOD;
+  $mentor_crm_payment_sanbox = MENTOR_CRM_SANBOX;
   echo "<div class='wrap'>{$notices}</div>";
   include_once 'loader.php';
   ?>

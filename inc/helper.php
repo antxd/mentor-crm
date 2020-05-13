@@ -1,7 +1,90 @@
 <?php
+/**
+ * Generate a Unique String for Orders.
+ *
+ * this function generate a string, like hash for use as unique reference
+ *
+ * @since 1.0.0
+ *
+ * @param int $ID_from_DB order id from DB to generate a unique reference
+ * @return string
+ */
+function GenerateOrderHash($ID_from_DB = 0){
+    $length = 10;
+    $characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    $charactersLength = strlen($characters);
+    $randomString = '';
+    for ($i = 0; $i < $length; $i++) {
+        $randomString .= $characters[rand(0, $charactersLength - 1)];
+    } 
+    $hash = 'T'.$ID_from_DB.'-'.$randomString;
+    return $hash;
+}
+/**
+ * Generate Order.
+ *
+ * this function generate a order with automatic unique reference
+ *
+ * @since 1.0.0
+ *
+ * @param int $LID lead ID relation
+ * @param int | float $amount amount of order
+ * @param bool $return_url bool to return url or Order ID
+ * @return string
+ */
+function CreateOrder($LID,$amount = 200000,$return_url= true){
+    global $wpdb;
+    $ORID = false;
+    $wpdb->insert( 
+        "{$wpdb->prefix}mentor_orders", 
+        array(
+            'LID' => $LID,
+            'amount' => $amount
+        ), 
+        array( 
+            '%d', 
+            '%f', 
+        ) 
+    );
+    $ORID = $wpdb->insert_id;
+    $reference_hash = GenerateOrderHash($ORID);
+    $wpdb->update( 
+        "{$wpdb->prefix}mentor_orders", 
+        array( 'reference' => $reference_hash ), 
+        array( 'ORID' => $ORID ), 
+        array( '%s' ), 
+        array( '%d' ) 
+    );
+    if ($return_url) {
+        return trailingslashit(home_url()).'/mentor-crm-payment/'.$reference_hash;
+    }else{
+        return $ORID;
+    }
+    
+}
+/**
+ * Divide value to 100 for cents.
+ *
+ * this function generate a order with automatic unique reference
+ *
+ * @since 1.0.0
+ *
+ * @param int $amount amount to divide
+ * @return int
+ */
 function get_amount_in_cents( $amount ) {
     return (int) ( $amount * 100 );
 }
+/**
+ * Generate Log of data lead change.
+ *
+ * this function insert on DB a log of changes generate a order with automatic unique reference
+ *
+ * @since 1.0.0
+ *
+ * @param int $amount amount to divide
+ * @return int
+ */
 function validate_changes_log($validate_field_logs,$lid){
 	global $wpdb,$_POST;
 	$row_to_validate = $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}mentor_leads WHERE LID = {$lid}");
@@ -22,15 +105,17 @@ function shortcode_text_crm($type,$from,$to){
 	global $wpdb,$managers,$payment_state_text;
 	switch ($type) {
 		case 'step_ID':
-			$title1 = $wpdb->get_row( "SELECT title FROM {$wpdb->prefix}mentor_steps WHERE SID = {$from}")->title;
-			$title2 = $wpdb->get_row( "SELECT title FROM {$wpdb->prefix}mentor_steps WHERE SID = {$to}")->title;
+			$title1 = $wpdb->get_var( "SELECT title FROM {$wpdb->prefix}mentor_steps WHERE SID = {$from}");
+			$title2 = $wpdb->get_var( "SELECT title FROM {$wpdb->prefix}mentor_steps WHERE SID = {$to}");
 			$return = ' de: '.$title1.' a: '.$title2;
 			break;
 		case 'reason':
 			$return = ' de: '.$from.' a: '.$to;
 			break;
 		case 'manage':
-			$return = ' de: '.$managers[$from].' a: '.$managers[$to];
+            $manage_from = $wpdb->get_var( "SELECT name FROM {$wpdb->prefix}mentor_managers WHERE MID = {$from}");
+            $manage_to = $wpdb->get_var( "SELECT name FROM {$wpdb->prefix}mentor_managers WHERE MID = {$to}");
+			$return = ' de: '.$manage_from.' a: '.$manage_to;
 			break;
 		case 'date':
 			$return = ' de: '.date('Y/m/d',strtotime($from)).' a: '.date('Y/m/d',strtotime($to));
@@ -58,6 +143,37 @@ function shortcode_text_crm($type,$from,$to){
 	}
 	return $return;
 }
+
+function mentor_email_calendar($data = array()){
+    $start_timestamp = strtotime('31-01-2019');
+    $end_timestamp = strtotime('31-02-2019');
+    $rest_name = 'test locatio';
+    $cust_email = $customer_name = $from_email = 'admin@mediacore.com.ar';
+    $restaurant_city = 'Buenos Aires';
+    $ics_reservation_id = $start_timestamp.'-'.$from_email;
+
+    $i_calendar="BEGIN:VCALENDAR
+    PRODID:-//Microsoft Corporation//Outlook 10.0 MIMEDIR//EN
+    VERSION:2.0
+    CALSCALE:GREGORIAN
+    METHOD:REQUEST
+    BEGIN:VEVENT
+    DTSTART:".$start_timestamp."
+    DTEND:".$end_timestamp."
+    DTSTAMP:".$start_timestamp."
+    ORGANIZER;CN=".$rest_name.":mailto:".$from_email."
+    UID:".$ics_reservation_id."
+    ATTENDEE;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN=".$customer_name.":mailto:".$cust_email."
+    DESCRIPTION:test
+    LOCATION:".$restaurant_city."
+    SEQUENCE:0
+    STATUS:CONFIRMED
+    SUMMARY:SI SE PUEDE FABIAN XD
+    TRANSP:OPAQUE
+    END:VEVENT
+    END:VCALENDAR";
+}
+
 function mentor_email($to,$subject,$body,$type = 1,$options = array(),$headers = null){
     global $wpdb,$phpmailer;
     $logo = get_option('mentor_crm_logo');
@@ -79,7 +195,7 @@ function mentor_email($to,$subject,$body,$type = 1,$options = array(),$headers =
             </div>';
     if ($type == 2) {
         if (!empty($options['lid'])) {
-            $imgs_src = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}mentor_dhara_lead_images WHERE LID = 1");
+            $imgs_src = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}mentor_dhara_lead_images WHERE LID = ".$options['lid']);
             add_action( 'phpmailer_init', function(&$phpmailer)use($imgs_src){
                 $phpmailer->SMTPKeepAlive = true;
                 $phpmailer->IsHTML(true);
@@ -105,20 +221,42 @@ function mentor_email($to,$subject,$body,$type = 1,$options = array(),$headers =
                     }
                     $img = str_replace(' ', '+', $img);
                     $data = base64_decode($img);
-                    $phpmailer->addStringEmbeddedImage($data,$uid,$name);
+                    //$phpmailer->addStringEmbeddedImage($data,$uid,$name);
                     $phpmailer->addStringAttachment($data,$name);     
                 }
             });
         }
     }
+    if ($type == 3) {
+        if (!empty($options['lid'])) {
+            $calendar_file = 
+            add_action( 'phpmailer_init', function(&$phpmailer)use($calendar_file){
+                $phpmailer->SMTPKeepAlive = true;
+                $phpmailer->IsHTML(true);
+                $phpmailer->addStringAttachment($data,$name);
+                $mail->addStringAttachment($calendar_file, 'calendar_file.ics');
+            });
+        }
+    }
     if (empty($headers)) {
-       $headers = array('Content-Type: text/html; charset=UTF-8','From: Dev Mentor <dev@bementor.co>');
+       $headers = array('Content-Type: text/html; charset=UTF-8');
+       //,'From: Dev Mentor <dev@bementor.co>'
     }
     wp_mail($to,$subject,$body,$headers);
 }
 //add_action( 'plugins_loaded', 'email_test' );
 function email_test(){
 //    mentor_email('jdmmtm@gmail.com','test '.time(),'TEST DE HTML');
+}
+function print_state_order($state=1,$echo = false){
+    global $payment_state_text;
+    $icons = array(1=>'warning',2=>'yes-alt',3=>'dismiss');
+    $state_html =' <span class="payment_state_label state_'.$state.'">'.$payment_state_text[$state].' <span class="dashicons dashicons-'.$icons[$state].'"></span></span>';
+    if ($echo) {
+        echo $state_html;
+    }else{
+        return $state_html;
+    }
 }
 $payment_state_text = array(1=>'PENDIENTE',2=>'PAGADO',3=>'CANCELADO/EXP.');
 $managers = array(

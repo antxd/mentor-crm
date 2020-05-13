@@ -74,10 +74,64 @@ function validate_payu_transaction(){
   );
   status_header($status);
 }
+function make_payment_checkout($transaction_reference){
+  global $wpdb;
+  $ORID = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}mentor_orders WHERE reference = '{$transaction_reference}'");
+  $responseUrl = trailingslashit(home_url()).'/thanks-for-your-purchase';
+  $payer = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}mentor_leads WHERE LID = {$ORID->LID}");
+  $payerFullName = $payer->fullname;
+  $email = $payer->email;
+  $phone = $payer->phone;
+  $amount = $ORID->amount;
+  if (MENTOR_CRM_PAYMENT_METHOD == 1) {
+    $form = '<form action="https://checkout.wompi.co/p/" method="GET" id="wompi_online_payment">
+                <!-- OBLIGATORIOS -->
+                <input type="hidden" name="public-key" value="'.PUB_KEY_WOMPI.'" />
+                <input type="hidden" name="currency" value="COP" />
+                <input type="hidden" name="amount-in-cents" value="'.get_amount_in_cents($amount).'" />
+                <input type="hidden" name="reference" value="'.$transaction_reference.'" />
+                <!-- OPCIONALES -->
+                <input type="hidden" name="redirect-url" value="'.$responseUrl.'" />
+                <input type="hidden" name="customer_email" value="'.$email.'" />
+            </form>
+            <script>document.getElementById("wompi_online_payment").submit();</script>';
+  }
+  if (MENTOR_CRM_PAYMENT_METHOD == 2) {
+    $payulatam_account = get_option('mentor_crm_accountid_payu');
+    $payulatam_apilogin = get_option('mentor_crm_apilogin_payu');
+    $payulatam_apikey = get_option('mentor_crm_apikey_payu');
+    $payulatam_merchantid = get_option('mentor_crm_merchantid_payu');
+    $test = (MENTOR_CRM_SANBOX == false)?0:1;
+    $confirmationUrl = trailingslashit(home_url()).'/mentor-crm-payu-events';
+    $referenceCode = $transaction_reference;
+    $firma_cadena = $payulatam_apikey."~".$payulatam_merchantid."~".$referenceCode."~".$amount."~COP";
+    $signature = md5($firma_cadena);
+    $form = '<form method="post" action="'.ENDPOINT_PAYU.'" name="payulatam_online_payment" id="payulatam_online_payment">
+                <input name="merchantId"    type="hidden"  value="'.$payulatam_merchantid.'">
+                <input name="accountId"     type="hidden"  value="'.$payulatam_account.'">
+                <input name="description"   type="hidden"  value="CITA - <?php echo $referenceCode; ?>">
+                <input name="referenceCode" type="hidden"  value="'.$referenceCode.'">
+                <input name="amount"        type="hidden"  value="'.$amount.'">
+                <input name="tax"           type="hidden"  value="0" >
+                <input name="taxReturnBase" type="hidden"  value="0" >
+                <input name="currency"      type="hidden"  value="COP">
+                <input name="signature"     type="hidden"  value="'.$signature.'">
+                <input name="test"          type="hidden"  value="'.$test.'">
+                <input name="buyerEmail"    type="hidden"  value="'.$email.'">
+                <input name="payerFullName"    type="hidden"  value="'.$payerFullName.'">
+                <input name="mobilePhone"    type="hidden"  value="'.$phone.'">
+                <input name="responseUrl"    type="hidden"  value="'.$responseUrl.'">
+                <input name="confirmationUrl"    type="hidden"  value="'.$confirmationUrl.'">
+            </form>
+            <script>document.getElementById("payulatam_online_payment").submit();</script>';
+  }
+  echo $form;
+  die;
+}
 
 function make_payment_thanks(){
   $current_theme = get_stylesheet_directory();
-  $mentor_crm_payment_method = (empty(get_option('mentor_crm_payment_method')))?1:get_option('mentor_crm_payment_method');
+  $mentor_crm_payment_method = MENTOR_CRM_PAYMENT_METHOD;
   $estadoTransaction = $referenceCode = $transactionId = '---';
   $transactionValue = 0;
   if (!empty($_GET['id'])) {

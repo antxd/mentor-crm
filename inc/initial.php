@@ -19,6 +19,11 @@ if (!empty($_GET['sid'])) {
   }
 }
 ?>
+<style type="text/css">
+.payment_state_label {
+    background: <?php echo $tag_color; ?> !important;;
+}
+</style>
   <div class="wrap mentor-crm-wrap">
       <?php include 'crm-header.php'; ?>
       <div class="mentor-crm-box">
@@ -65,16 +70,19 @@ if (!empty($_GET['sid'])) {
                         if ($sid == 'all') {
                           $leads = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}mentor_leads WHERE state=2 ORDER BY LID DESC LIMIT $start_from, $limit" );
                         }
+                        $managers = $wpdb->get_results( "SELECT MID,name FROM {$wpdb->prefix}mentor_managers ORDER BY MID ASC" );
+                        //var_dump($managers);die;
                         foreach ($leads as $key => $lead) {
+                            $last_order_state = $wpdb->get_var("SELECT state FROM {$wpdb->prefix}mentor_orders WHERE LID={$lead->LID} ORDER BY ORID DESC LIMIT 1");
+                            $manager_name = ($lead->manage == 0)?'POR CONFIRMAR':$wpdb->get_var("SELECT name FROM {$wpdb->prefix}mentor_managers WHERE MID={$lead->manage}");
                             echo '<tr>
                                     <td>'.$lead->fullname.'</td>
                                     <td>'.$lead->reason.'</td>
                                     <td>'.date('d/m/Y',strtotime($lead->date)).'</td>
                                     <td>'.date('H:i A',strtotime($lead->time)).'</td>
                                     <td>'.(($lead->confirm_date == 0)?'NO':'SI').'</td>
-                                    <td>'.$managers[$lead->manage].'</td>
-                                    <td><span class="payment_state_label state_'.$lead->payment_state.'" '.(($lead->payment_state == 1)?'style="background-color:'.$tag_color.'"':'').'>'.$payment_state_text[$lead->payment_state].'</span>
-                                    </td>
+                                    <td>'.$manager_name.'</td>
+                                    <td>'.print_state_order($last_order_state).'</td>
                                     <td class="text-center">
                                       <a href="'.admin_url('admin.php?page=mentor-crm-admin').'&lid='.$lead->LID.'" class="mentor-crm-btn-edit" style="background-color:'.$tag_color.'">
                                           <span class="dashicons dashicons-edit"></span>
@@ -82,6 +90,7 @@ if (!empty($_GET['sid'])) {
                                     </td>
                                   </tr>';
                         }
+                        /*<span class="payment_state_label state_'.$lead->payment_state.'" '.(($lead->payment_state == 1)?'style="background-color:'.$tag_color.'"':'').'>'.$payment_state_text[$lead->payment_state].'</span>*/
                       ?>
               </table>
               <ul class="mentor-crm-pagination">

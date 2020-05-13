@@ -2,9 +2,11 @@
 $lead = $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}mentor_leads WHERE LID = ".$_GET['lid']);
 $step = $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}mentor_steps WHERE SID = ".$lead->step_ID);
 $steps = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}mentor_steps ORDER BY order_val,SID ASC");
+$managers = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}mentor_managers ORDER BY MID ASC" ); 
 $sid = $step->SID;
 $tag_color = $step->color;
 ?>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/autonumeric/4.1.0/autoNumeric.min.js"></script>
 <style type="text/css">
 h1.lead-title {
     color: <?php echo $tag_color; ?> !important;
@@ -35,6 +37,9 @@ h1.lead-title {
 }
 .toggle-form {
     background: <?php echo $tag_color; ?> !important;
+}
+.payment_state_label {
+    background: <?php echo $tag_color; ?> !important;;
 }
 </style>
 <div class="wrap mentor-crm-wrap">
@@ -76,7 +81,6 @@ h1.lead-title {
               <h2>CONTROL DE CITAS</h2>
               <form class="mentor-crm-ajax">
                 <input type="hidden" name="action" value="mentor_lead_detail">
-                <input type="hidden" name="manage" value="0" id="manage-real">
                 <input type="hidden" name="lid" value="<?php echo $_GET['lid']; ?>">
                   <div class="mentor-crm-detail-content crm-row">
                     <div class="crm-col-50 form-wrap">
@@ -114,26 +118,13 @@ h1.lead-title {
                       <label><?php echo $manage_label; ?></label>
                       <select name="manage">
                         <?php foreach ($managers as $key => $manage) { ?>
-                              <option value="<?php echo $key; ?>" <?php selected($key,$lead->manage); ?>><?php echo $manage; ?></option>
+                              <option value="<?php echo $manage->MID; ?>" <?php selected($manage->MID,$lead->manage); ?>><?php echo $manage->name; ?></option>
                         <?php } ?>
                       </select>
                     </div>
                     <div class="crm-col form-wrap">
                       <label><?php echo $reason_label; ?></label>
                       <input type="text" name="reason" value="<?php echo $lead->reason; ?>">
-                    </div>
-                    <div class="crm-col-50 form-wrap cost-wrap">
-                      <label><?php echo $cost_label; ?></label>
-                      <input type="number" name="cost" step='0.01' placeholder='0.00' value="<?php echo $lead->cost; ?>">
-                      <span><?php echo $cost_coin; ?></span>
-                    </div>
-                    <div class="crm-col-50 form-wrap">
-                      <label><?php echo $payment_label; ?></label>
-                      <select name="payment_state">
-                          <option value="1" <?php selected($lead->payment_state,1); ?>><?php echo $payment_state_text[0]; ?></option>
-                          <option value="2" <?php selected($lead->payment_state,2); ?>><?php echo $payment_state_text[1]; ?></option>
-                          <option value="3" <?php selected($lead->payment_state,3); ?>><?php echo $payment_state_text[2]; ?></option>
-                      </select>
                     </div>
                     <div class="crm-col-50 form-wrap">
                       <label><?php echo $state_label; ?></label>
@@ -172,23 +163,72 @@ h1.lead-title {
       </div>
       <div class="crm-col">
         <div class="mentor-crm-detail">
-          <h2>Botones de Pago Generados</h2>
-          <div class="mentor-crm-detail-content lead-log-detail">
+          <h2 class="mentor-crm-detail-orders-title">
+          <div class="crm-row">
+            <div class="crm-col-50 orders-title-wrap">
+                Botones de Pago Generados
+            </div>
+            <div class="crm-col-50 form-wrap text-right">
+                <button type="button" class="gen-btn-payment">GENERAR BOTÓN DE PAGO</button>
+            </div>
+          </div>
+          </h2>
+          <div class="mentor-payment-editor">
+            <form class="mentor-crm-ajax">
+              <input type="hidden" name="action" value="mentor_order_detail">
+              <input type="hidden" name="orid" value="0" id="orid">
+              <input type="hidden" name="lid" value="<?php echo $_GET['lid']; ?>">
+              <div class="crm-row">
+                  <div class="crm-col-20 form-wrap cost-wrap">
+                     <label>Referencia</label>
+                     <input type="text" id="reference-payment" value="" readonly="true">
+                   </div>
+                  <div class="crm-col-30 form-wrap cost-wrap">
+                    <label><?php echo $cost_label; ?></label>
+                     <input type="hidden" name="cost" value="0" id="order-cost-raw">
+                    <input type="text" name="" placeholder='0' value="0" id="order-cost">
+                    <span><?php echo $cost_coin; ?></span>
+                  </div>
+                  <div class="crm-col-30 form-wrap">
+                    <label><?php echo $payment_label; ?></label>
+                    <select name="state" id="state-payment">
+                        <option value="1"><?php echo $payment_state_text[1]; ?></option>
+                        <option value="2"><?php echo $payment_state_text[2]; ?></option>
+                        <option value="3"><?php echo $payment_state_text[3]; ?></option>
+                    </select>
+                  </div>
+                  <div class="crm-col-20 form-wrap">
+                      <button type="submit" class="mentor-crm-submit-order"><span class="payment-save-text">CREAR</span></button>
+                  </div>
+              </div>
+            </form>
+          </div>
+          <div class="mentor-crm-detail-content">
             <table class="mentor-table-basic text-center">
                 <tr>
                     <th>ID</th>
                     <th>Referencia</th>
-                    <th>Enlace de Pago</th>
+                    <th>Valor</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
                     <th></th>
                 </tr>
                 <?php
-                  /*$dhara_lead_images = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}mentor_dhara_lead_images WHERE LID=".$_GET['lid']." ORDER BY LIMGID ASC" );
-                  foreach ($dhara_lead_images as $key => $dhara_lead_image) {
-                      $secure_link = base64_encode(serialize(array('LIMGID' => $dhara_lead_image->LIMGID,'created' => time(), 'key' => get_option('mentor_crm_security_password') )));
-
-                        echo "<tr><td>".date('d/m/Y H:i A',strtotime($dhara_lead_image->created))."</td>
-                        <td><a href='".get_home_url()."?crm-mentor-mode=view-file-secure&data-lead={$secure_link}' target='_blank'>#{$dhara_lead_image->LIMGID}</a></td></tr>";
-                  }*/
+                  $lead_orders = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}mentor_orders WHERE LID=".$_GET['lid']." ORDER BY ORID DESC" );
+                  foreach ($lead_orders as $key => $lead_order) {
+                      echo "<tr>
+                                <td>{$lead_order->ORID}</td>
+                                <td>{$lead_order->reference}</td>
+                                <td>COP $ ".number_format($lead_order->amount,0,'.','.')."</td>
+                                <td>".date('d/m/Y H:i A',strtotime($lead_order->created))."</td>
+                                <td>".print_state_order($lead_order->state)."</td>
+                                <td>
+                                  <div class='form-wrap text-right'>
+                                      <button type='button' class='mentor-crm-order-edit' data-orid='{$lead_order->ORID}'>EDITAR</button>
+                                  </div>
+                                </td>
+                            </tr>";
+                  }
                 ?>
             </table>
           </div>
@@ -234,5 +274,31 @@ jQuery(document).ready(function($){
     $('.toggle-form').click(function(e){
         $('.toggle-form-wrap').toggleClass('toggle-form-true')
     })
+    $('.mentor-crm-order-edit').click(function(){
+        $('.mentor-payment-editor').slideUp()
+        $.post(ajaxurl,{action:'mentor_get_order_detail',orid:$(this).data('orid')},function(data,status){
+          $('#orid').val(data.ORID)
+          $('#reference-payment').val(data.reference)
+          $('#state-payment').val(data.state)
+          order_cost.set(parseInt(data.amount))
+          $('.mentor-payment-editor').slideDown()
+          $('html,body').animate({
+                  scrollTop: $('.mentor-payment-editor').offset().top
+              }, 'slow');
+        })
+        return false;
+    })
+    $('.gen-btn-payment').click(function(e){
+        $('.mentor-payment-editor').slideToggle()
+    })
+    $('#order-cost').change(function(){
+      $('#order-cost-raw').val(order_cost.getNumber())
+    })
+    var order_cost = new AutoNumeric('#order-cost',{
+          allowDecimalPadding: false,
+          decimalCharacter: ",",
+          digitGroupSeparator: "."
+    });
+    
 })
 </script>

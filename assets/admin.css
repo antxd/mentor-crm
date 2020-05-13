@@ -184,15 +184,12 @@ table.mentor-table-basic tr:hover .mentor-crm-btn-edit{
     padding: 10px;
 }
 .payment_state_label {
-    background: #ccc;
+    background: #bbb;
     display: block;
     text-align: center;
     padding: 7px;
     border-radius: 5px;
-    color: #000;
-}
-.payment_state_label.state_1 {
-    color:#fff;
+    color: #fff;
 }
 ul.mentor-crm-pagination {
     text-align: right;
@@ -337,6 +334,7 @@ h1.lead-title {
     border-radius: 8px;
     transition: all .3s ease-in-out;
     outline: none;
+    font-size: 14px;
 }
 .mentor-crm-wrap .form-wrap button:hover,
 .mentor-crm-wrap .form-wrap button:focus {
@@ -481,4 +479,17 @@ label.mentor_crm_payment_method_selector {
 }
 .mentor_crm_payment_options {
     padding: 15px 0;
+}
+.mentor-crm-detail-orders-title .form-wrap {
+    margin: 0;
+}
+.orders-title-wrap {
+    line-height: 43px;
+}
+.mentor-crm-submit-order {
+    margin-top: 1.5em;
+}
+.mentor-payment-editor{
+    padding-top: 1em;
+    display: none;
 }
