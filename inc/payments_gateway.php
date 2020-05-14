@@ -134,35 +134,38 @@ function make_payment_thanks(){
   $mentor_crm_payment_method = MENTOR_CRM_PAYMENT_METHOD;
   $estadoTransaction = $referenceCode = $transactionId = '---';
   $transactionValue = 0;
-  if (!empty($_GET['id'])) {
-      $wompi_request = wp_remote_get( ENDPOINT_WOMPI.'transactions/'.$_GET['id'] );
-      $result = json_decode( wp_remote_retrieve_body($wompi_request) );
-      if ( is_object( $result ) && ! is_wp_error( $result ) ) {
-          $wompi_estado_text = array(
-            'APPROVED'=>'Transacción aprobada ✅',
-            'DECLINED'=>'Transacción rechazada ⛔️',
-            'VOIDED'=>'Transacción anulada 🕓',
-            'ERROR'=>'Error interno ❌'
-          );
-          $result->data->status = 'ERROR';
-          $estadoTransaction = $wompi_estado_text[$result->data->status];
-          $transactionId = $result->data->id;
-          $referenceCode = $result->data->reference;
-          $transactionValue = floatval($result->data->amount_in_cents/1000);
-      }
-  }
-  if (!empty($_REQUEST['transactionState'])) {
-    $payu_estado_text = array(4=>'Transacción aprobada ✅',6=>'Transacción rechazada ⛔️',7=>'Transacción Pendiente 🕓',104=>'Error interno ❌');
-    $estadoTransaction = $payu_estado_text[$_REQUEST['transactionState']];
-  }
-  if (!empty($_REQUEST['transactionId'])) {
-    $transactionId = $_REQUEST['transactionId'];
-  }
-  if (!empty($_REQUEST['referenceCode'])) {
-    $referenceCode = $_REQUEST['referenceCode'];
-  }
-  if (!empty($_REQUEST['TX_VALUE'])) {
-    $transactionValue = $_REQUEST['TX_VALUE'];
+  if ($mentor_crm_payment_method == 1) {
+    if (!empty($_GET['id'])) {
+        $wompi_request = wp_remote_get( ENDPOINT_WOMPI.'transactions/'.$_GET['id'] );
+        $result = json_decode( wp_remote_retrieve_body($wompi_request) );
+        if ( is_object( $result ) && ! is_wp_error( $result ) ) {
+            $wompi_estado_text = array(
+              'APPROVED'=>'Transacción aprobada ✅',
+              'DECLINED'=>'Transacción rechazada ⛔️',
+              'VOIDED'=>'Transacción anulada 🕓',
+              'ERROR'=>'Error interno ❌'
+            );
+            $result->data->status = 'ERROR';
+            $estadoTransaction = $wompi_estado_text[$result->data->status];
+            $transactionId = $result->data->id;
+            $referenceCode = $result->data->reference;
+            $transactionValue = floatval($result->data->amount_in_cents/1000);
+        }
+    }
+  }else{
+    if (!empty($_REQUEST['transactionState'])) {
+      $payu_estado_text = array(4=>'Transacción aprobada ✅',6=>'Transacción rechazada ⛔️',7=>'Transacción Pendiente 🕓',104=>'Error interno ❌');
+      $estadoTransaction = $payu_estado_text[$_REQUEST['transactionState']];
+    }
+    if (!empty($_REQUEST['transactionId'])) {
+      $transactionId = $_REQUEST['transactionId'];
+    }
+    if (!empty($_REQUEST['referenceCode'])) {
+      $referenceCode = $_REQUEST['referenceCode'];
+    }
+    if (!empty($_REQUEST['TX_VALUE'])) {
+      $transactionValue = $_REQUEST['TX_VALUE'];
+    }
   }
   $sub_header_color = array(1=>'1a4594',2=>'A6C307');
   include $current_theme.'/header.php'; ?>
