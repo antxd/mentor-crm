@@ -187,8 +187,8 @@ function make_payment_thanks(){
   .mentor-crm-table tr:nth-child(even) {
     background-color: #dddddd;
   }
-  .mentor-crm-tabletable tr:nth-child(odd) td{
-    background: transparent;
+  .mentor-crm-tabletable tr td{
+    background-color: transparent !important;
   }
   .mentor-crm-container {
     max-width: 1100px;
