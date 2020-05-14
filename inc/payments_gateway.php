@@ -145,7 +145,6 @@ function make_payment_thanks(){
               'VOIDED'=>'Transacción anulada 🕓',
               'ERROR'=>'Error interno ❌'
             );
-            $result->data->status = 'ERROR';
             $estadoTransaction = $wompi_estado_text[$result->data->status];
             $transactionId = $result->data->id;
             $referenceCode = $result->data->reference;
