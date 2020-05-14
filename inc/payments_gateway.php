@@ -187,7 +187,7 @@ function make_payment_thanks(){
   .mentor-crm-table tr:nth-child(even) {
     background-color: #dddddd;
   }
-  .mentor-crm-tabletable tr td{
+  .mentor-crm-table tr td{
     background-color: transparent !important;
   }
   .mentor-crm-container {
