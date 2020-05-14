@@ -190,6 +190,9 @@ function make_payment_thanks(){
   .mentor-crm-table tr td{
     background-color: transparent !important;
   }
+  .mentor-crm-table tr:nth-child(odd) td {
+    color: #6c6c6c;
+  }
   .mentor-crm-container {
     max-width: 1100px;
     width: 100%;
