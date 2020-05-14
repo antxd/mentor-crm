@@ -354,14 +354,14 @@ function mentor_lead_capture_form( $atts ) {
 			</div>
             <div class="crm-col form-wrap inline-input crm-text-center">
             	<label class="">
-            		<img src="<?php echo plugins_url('/mentor-crm/assets/dhara-perfil.svg'); ?>">
+            		<img src="<?php echo plugins_url('/'.MENTOR_CRM_FOLDER.'/assets/dhara-perfil.svg'); ?>">
             		<span class="title-images">PERFIL</span>
                     <button type="button" class="select_file" data-inputid="foto1">SUBIR FOTO</button>
             		<input type="file" name="lead_image[]" accept="image/*" class="check-required ocultar_archivo" id="foto1">
                     <span id="foto1_name"></span>
             	</label>
             	<label>
-            		<img src="<?php echo plugins_url('/mentor-crm/assets/dhara-frente.svg'); ?>">
+            		<img src="<?php echo plugins_url('/'.MENTOR_CRM_FOLDER.'/assets/dhara-frente.svg'); ?>">
             		<span class="title-images">FRENTE</span>
                     <button type="button" class="select_file" data-inputid="foto2">SUBIR FOTO</button>
             		<input type="file" name="lead_image[]" accept="image/*" class="check-required ocultar_archivo" id="foto2">
@@ -386,7 +386,7 @@ function mentor_lead_capture_form( $atts ) {
 <div class="mentor-crm-modal-response">
 	<div class="mentor-crm-modal-body">
         <button class="mentor-crm-modal-close">&times;</button>
-        <img src="<?php echo plugins_url('/mentor-crm/assets/dhara-thanks.png'); ?>">
+        <img src="<?php echo plugins_url('/'.MENTOR_CRM_FOLDER.'/assets/dhara-thanks.png'); ?>">
 		<h1>Gracias</h1>
 		<h2>Serás redireccionado al checkout, para confirmar tu solicitud de cita.<br><b>Costo:</b> $ 200.000</h2>
 	</div>

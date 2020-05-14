@@ -11,6 +11,7 @@ Author URI: https://jdmm.xyz
 
 */
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
+define( 'MENTOR_CRM_FOLDER',dirname(__FILE__));
 define( 'MENTOR_CRM_SANBOX',get_option('mentor_crm_payment_sanbox'));
 define( 'MENTOR_CRM_PAYMENT_METHOD',get_option('mentor_crm_payment_method'));
 //$mentor_crm_wompi_sanbox = (empty(get_option('mentor_crm_payment_sanbox')))?false:get_option('mentor_crm_payment_sanbox');
@@ -132,7 +133,7 @@ function install_mentor_crm(){
     dbDelta( $sql5 );
     add_role( 'crm_manager', 'CRM Manager', array( 'read' => true,'edit_posts' => false,'delete_posts' => false,'level_0' => true, 'manage_options' => true) );
     if(empty(get_option( 'mentor_crm_logo' ))){
-        update_option( 'mentor_crm_logo', plugins_url('/mentor-crm/assets/logo-mentor-s.png') );
+        update_option( 'mentor_crm_logo', plugins_url('/'.MENTOR_CRM_FOLDER.'/assets/logo-mentor-s.png') );
     }
     if(empty(get_option( 'mentor_crm_payment_sanbox' ))){
         update_option( 'mentor_crm_payment_sanbox', true );
@@ -153,7 +154,7 @@ function admin_screens_mentor_crm() {
 }
 function mentor_screen_initial() {
   global $wpdb,$crmcountries,$payment_state_text;
-  wp_enqueue_style( 'mentor-crm', plugins_url('/mentor-crm/assets/admin.css',false,'1.0.0') );
+  wp_enqueue_style( 'mentor-crm', plugins_url('/'.MENTOR_CRM_FOLDER.'/assets/admin.css',false,'1.0.0') );
   $cliente_name = get_option('mentor_crm_cliente_name');
   $lead_title = 'FICHA DEL PACIENTE';
   $lead_name = 'NOMBRE PACIENTE';

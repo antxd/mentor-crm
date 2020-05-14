@@ -232,7 +232,7 @@ function make_payment_thanks(){
   <div id="thanks-page-mentor-crm">
       <div class="mentor-crm-sub-header">
           <h1>
-            <img src="<?php echo plugins_url('/mentor-crm/assets/method-'.$mentor_crm_payment_method.'.svg'); ?>" alt="Gracias por su compra!" />
+            <img src="<?php echo plugins_url('/'.MENTOR_CRM_FOLDER.'/assets/method-'.$mentor_crm_payment_method.'.svg'); ?>" alt="Gracias por su compra!" />
             <?php echo __('Gracias por su compra!','jdmmlang'); ?>
           </h1>
       </div>

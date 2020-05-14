@@ -5,7 +5,7 @@ function mentor_screen_options() {
   wp_enqueue_media();
   wp_enqueue_style( 'wp-color-picker' );
   wp_enqueue_script( 'wp-color-picker' );
-  wp_enqueue_style( 'mentor-crm', plugins_url('/mentor-crm/assets/admin.css',false,'1.0.0') );
+  wp_enqueue_style( 'mentor-crm', plugins_url('/'.MENTOR_CRM_FOLDER.'/assets/admin.css',false,'1.0.0') );
   if (!empty($_GET['delete-sid'])) {
       $wpdb->delete($wpdb->prefix.'mentor_steps', array( 'SID' => $_GET['delete-sid'] ) );
       $notices .='<div class="notice notice-error is-dismissible">
