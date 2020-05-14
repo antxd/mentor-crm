@@ -15,13 +15,14 @@ function validate_wompi_transaction($json){
             'VOIDED'=>3,
             'ERROR'=>3
       );
-      $wpdb->show_errors();
+      $extra_info = array(
+        'name' => 'wompi'
+      );
       $ORID = $wpdb->get_var("SELECT ORID FROM {$wpdb->prefix}mentor_orders WHERE reference = '{$transaction_reference}'");
       $wpdb->update($wpdb->prefix."mentor_orders",
         array('state'=>(int)$wompi_estado[$result->data->status],'external_id'=>$transaction_id),
         array('ORID'=>$ORID)
       );
-      $wpdb->hide_errors();
     }
   }
   status_header(200);
@@ -170,6 +171,9 @@ function make_payment_thanks(){
   $sub_header_color = array(1=>'1a4594',2=>'A6C307');
   include $current_theme.'/header.php'; ?>
   <style type="text/css">
+  #thanks-page-mentor-crm {
+      margin-bottom: 60px;
+  }
   #thanks-page-mentor-crm * {
     box-sizing: border-box;
   }
@@ -237,6 +241,8 @@ function make_payment_thanks(){
   .mentor-crm-note{
     padding: 20px 0 5px;
   }
+  /* fix dhara*/
+  .content{margin: 0;}
   </style>
   <div id="thanks-page-mentor-crm">
       <div class="mentor-crm-sub-header">
