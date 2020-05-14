@@ -14,8 +14,6 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 define( 'MENTOR_CRM_FOLDER',basename(dirname(__FILE__)));
 define( 'MENTOR_CRM_SANBOX',get_option('mentor_crm_payment_sanbox'));
 define( 'MENTOR_CRM_PAYMENT_METHOD',get_option('mentor_crm_payment_method'));
-//$mentor_crm_wompi_sanbox = (empty(get_option('mentor_crm_payment_sanbox')))?false:get_option('mentor_crm_payment_sanbox');
-//$mentor_crm_payment_method = (empty(get_option('mentor_crm_payment_method')))?1:get_option('mentor_crm_payment_method');
 if (MENTOR_CRM_SANBOX) {
   if (MENTOR_CRM_PAYMENT_METHOD == 1) {
     define('PUB_KEY_WOMPI', get_option('mentor_crm_pub_key_wompi_test'));
@@ -40,9 +38,6 @@ include_once 'inc/shortcodes.php';
 include_once 'inc/routes.php';
 include_once 'inc/options.php';
 include_once 'inc/payments_gateway.php';
-//`payment_state` tinyint(4) DEFAULT '0',
-//`cost` decimal(13,2) DEFAULT NULL,
-//`mobile_phone` varchar(30) DEFAULT NULL,
 function install_mentor_crm(){
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
@@ -305,7 +300,7 @@ function mentor_order_detail() {
           array( '%f','%d' ), 
           array( '%d' ) 
       );
-      wp_send_json(array('message' => 'Botón creado exitosamente','action' => "location.reload();"));
+      wp_send_json(array('message' => 'Botón actualizado exitosamente','action' => "location.reload();"));
   }
 }
 
