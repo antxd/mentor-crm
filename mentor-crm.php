@@ -99,7 +99,8 @@ function install_mentor_crm(){
           CREATE TABLE IF NOT EXISTS `{$table_name4}` (
               `ORID` mediumint(9) NOT NULL AUTO_INCREMENT,
               `LID` mediumint(9) NOT NULL,
-              `reference` varchar(255) NOT NULL,
+              `reference` varchar(255) DEFAULT NULL,
+              `external_id` varchar(255) DEFAULT NULL,
               `amount` decimal(13,2) DEFAULT '0',
               `method_master` tinyint(4) DEFAULT '1',
               `extra_info` varchar(255) DEFAULT NULL,

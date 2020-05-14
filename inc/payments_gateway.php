@@ -1,28 +1,28 @@
 <?php
 function validate_wompi_transaction($json){
   global $wpdb;
-  file_put_contents(MENTOR_CRM_PLUGIN.time().".json",$json);
   $json = json_decode($json);
   if (!empty($json->event) && $json->event == 'transaction.updated') {
     $transaction_reference = $json->data->transaction->reference;
     $transaction_id = $json->data->transaction->id;
-
-    //$wompi_request = wp_remote_get( ENDPOINT_WOMPI.'transactions/'.$transaction_id );
-    //$result = json_decode( wp_remote_retrieve_body($wompi_request) );
-    //$extra_info = $wpdb->get_var("SELECT extra_info FROM {$wpdb->prefix}mentor_orders WHERE reference = '{$transaction_reference}'");
-    //if ( is_object( $result ) && ! is_wp_error( $result ) ) {
+    $wompi_request = wp_remote_get( ENDPOINT_WOMPI.'transactions/'.$transaction_id );
+    $result = json_decode( wp_remote_retrieve_body($wompi_request) );
+    //'extra_info'=>serialize($json) normalice data with specific requirements
+    if ( is_object( $result ) && ! is_wp_error( $result ) ) { 
       $wompi_estado = array(
             'APPROVED'=>2,
             'DECLINED'=>3,
             'VOIDED'=>3,
             'ERROR'=>3
       );
+      $wpdb->show_errors();
       $ORID = $wpdb->get_var("SELECT ORID FROM {$wpdb->prefix}mentor_orders WHERE reference = '{$transaction_reference}'");
-      $update = $wpdb->update($wpdb->prefix."mentor_orders",
-        array('state'=>$wompi_estado[$json->data->status],'external_id'=>$transaction_id,'extra_info'=>serialize($json)),
+      $wpdb->update($wpdb->prefix."mentor_orders",
+        array('state'=>(int)$wompi_estado[$result->data->status],'external_id'=>$transaction_id),
         array('ORID'=>$ORID)
       );
-    //}
+      $wpdb->hide_errors();
+    }
   }
   status_header(200);
 }
