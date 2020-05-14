@@ -7,6 +7,7 @@ function mentor_lead_capture_form( $atts ) {
 	), $atts );
 	//return "foo = {$a['foo']}";
 	ob_start();
+    $terms_url = get_option('mentor_crm_terms_url');
 	?>
 <style type="text/css">
 .mentor-lead-capture-form *,.crm-row * {
@@ -320,7 +321,7 @@ function mentor_lead_capture_form( $atts ) {
 			</div>
 			<div class="crm-col form-wrap crm-text-center tag-consultatipo-wrap">
 				<label>
-					<input type="radio" name="tag-consultatipo" value="1" required="true" checked> VIRTUAL / A DISTANCIA
+					<input type="radio" name="tag-consultatipo" value="1" required="true" checked> TELE ORIENTACIÓN MÉDICA
 				</label>
                	<label>
 					<input type="radio" name="tag-consultatipo" value="2"> PRESENCIAL
@@ -375,7 +376,7 @@ function mentor_lead_capture_form( $atts ) {
                 <textarea name="comments" placeholder="MENSAJE"></textarea>
                 <p class="required-text">&#42; Campos obligatorios</p>
                 <p><label><input type="checkbox" name="tag-age" value="1" required="true" checked="true"> SOY MAYOR DE 18 AÑOS</label></p>
-                <p><label><input type="checkbox" name="tag-terms" value="1" required="true" checked="true">ACEPTO TÉRMINOS Y CONDICIONES</label></p>
+                <p><label><input type="checkbox" name="tag-terms" value="1" required="true" checked="true">ACEPTO <a href="<?php echo $terms_url; ?>" target="_blank">TÉRMINOS Y CONDICIONES</a></label></p>
                 <button type="submit" class="mentor-crm-submit">CONTINUAR</button>
             </div>
 		</div>
@@ -387,7 +388,7 @@ function mentor_lead_capture_form( $atts ) {
         <button class="mentor-crm-modal-close">&times;</button>
         <img src="<?php echo plugins_url('/mentor-crm/assets/dhara-thanks.png'); ?>">
 		<h1>Gracias</h1>
-		<h2>Te contactaremos para confirmar tu cita.</h2>
+		<h2>Serás redireccionado al checkout, para confirmar tu solicitud de cita.<br><b>Costo:</b> $ 200.000</h2>
 	</div>
 </div>
 <script type="text/javascript">
@@ -446,6 +447,7 @@ jQuery(document).ready(function($){
                 if (data.msg == 'ok') {
                     $this.trigger('reset')
                     $('.mentor-crm-modal-response').fadeIn();
+                    setTimeout("location.href = '"+data.payment_url+"'",3000)
                 }else{
                     alert('Error, intenta de nuevo.')
                 }

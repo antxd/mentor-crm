@@ -41,6 +41,7 @@ include_once 'inc/options.php';
 include_once 'inc/payments_gateway.php';
 //`payment_state` tinyint(4) DEFAULT '0',
 //`cost` decimal(13,2) DEFAULT NULL,
+//`mobile_phone` varchar(30) DEFAULT NULL,
 function install_mentor_crm(){
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
@@ -52,7 +53,6 @@ function install_mentor_crm(){
             `birthdate` date DEFAULT NULL,
             `email` varchar(100) DEFAULT NULL,
             `phone` varchar(30) DEFAULT NULL,
-            `mobile_phone` varchar(30) DEFAULT NULL,
             `country` varchar(6) DEFAULT NULL,
             `city` varchar(100) DEFAULT NULL,
             `step_ID` tinyint(4) DEFAULT '0',
@@ -62,7 +62,7 @@ function install_mentor_crm(){
             `lead_comment` VARCHAR(255) NULL,
             `date` date DEFAULT NULL,
             `time` time DEFAULT NULL,
-            `confirm_date` tinyint(4) NULL DEFAULT '0',
+            `confirm_date` tinyint(4) NULL DEFAULT '1',
             `last_update` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             `created` datetime DEFAULT CURRENT_TIMESTAMP,
             `state` tinyint(4) DEFAULT '1',
@@ -123,6 +123,7 @@ function install_mentor_crm(){
           ) $charset_collate;";
     require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
     dbDelta( $sql );
+    $wpdb->query($wpdb->prepare("ALTER TABLE `{$table_name}` AUTO_INCREMENT = 100;"));
     dbDelta( $sql1 );
     dbDelta( $sql2 );
     dbDelta( $sql3 );
@@ -151,7 +152,7 @@ function admin_screens_mentor_crm() {
     add_submenu_page( 'mentor-crm-admin', 'Mentor CRM - Opciones', __('Opciones'), 'manage_options', 'mentor-crm-options', 'mentor_screen_options');
 }
 function mentor_screen_initial() {
-  global $wpdb,$crmcountries,$managers,$payment_state_text;
+  global $wpdb,$crmcountries,$payment_state_text;
   wp_enqueue_style( 'mentor-crm', plugins_url('/mentor-crm/assets/admin.css',false,'1.0.0') );
   $cliente_name = get_option('mentor_crm_cliente_name');
   $lead_title = 'FICHA DEL PACIENTE';
@@ -219,10 +220,46 @@ function mentor_lead_detail() {
 
   ),array('LID'=>$_POST['lid']));
   if (!empty($_POST['payment_button'])) {
-      // send email logic
+      //send last payment button to lead
+      $reference_hash = $wpdb->get_var("SELECT reference FROM {$wpdb->prefix}mentor_orders WHERE LID=".$_POST['lid']);
+      $lead = $wpdb->get_row("SELECT email,fullname FROM {$wpdb->prefix}mentor_leads WHERE LID=".$_POST['lid']);
+      $fullname = $lead->fullname;
+      $email = $lead->email;
+      $payment_url = trailingslashit(home_url()).'mentor-crm-payment/'.$reference_hash;
+      $body = "<b>Hola {$fullname}</b>
+      <p>Fusce a hendrerit ipsum. Vestibulum at enim urna. Suspendisse potenti. Nunc scelerisque non magna eget venenatis. Donec vitae tincidunt mauris, mollis bibendum arcu. Donec eget dui in risus lobortis pellentesque id pretium nibh. Proin et massa non metus condimentum tempor vel in ante. Praesent turpis nisi, pulvinar in laoreet sed, congue eu nunc.<p>
+        <a href='{$payment_url}' style='
+        margin: 20px auto;
+        display: block;
+        height: 40px;
+        line-height: 40px;
+        background-color: rgb(26, 69, 148);
+        font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+        font-weight: 400;
+        font-size: 14px;
+        color: #fff;
+        cursor: pointer;
+        border:none;
+        border-radius: 4px;
+        padding: 0px 16px;
+        text-decoration:none !important;
+        width: 115px;
+        text-align: center;' target='blank'>Paga con <strong>Wompi</strong></a>
+        <p>Fusce a hendrerit ipsum. Vestibulum at enim urna. Suspendisse potenti. Nunc scelerisque non magna eget venenatis. Donec vitae tincidunt mauris, mollis bibendum arcu. Donec eget dui in risus lobortis pellentesque id pretium nibh. Proin et massa non metus condimentum tempor vel in ante. Praesent turpis nisi, pulvinar in laoreet sed, congue eu nunc.</p>
+      ";
+      mentor_email($email,get_option('mentor_crm_cliente_name').' - Pago #'.$reference_hash,$body);
+      echo true;die;
   }
   if (!empty($_POST['email_button'])) {
-      //logic send email
+      //logic send email to manager
+      $manager = $wpdb->get_row("SELECT email,name FROM {$wpdb->prefix}mentor_managers WHERE MID=".$_POST['manage']);
+      $manager_email = $manager->email;
+      $manager_name = $manager->name;
+      $fullname = $wpdb->get_var("SELECT fullname FROM {$wpdb->prefix}mentor_leads WHERE LID=".$_POST['lid']);
+      $body = "<b>Hola {$manager_name}</b><br>
+        <p>Fusce a hendrerit ipsum. Vestibulum at enim urna. Suspendisse potenti. Nunc scelerisque non magna eget venenatis. Donec vitae tincidunt mauris, mollis bibendum arcu. Donec eget dui in risus lobortis pellentesque id pretium nibh. Proin et massa non metus condimentum tempor vel in ante. Praesent turpis nisi, pulvinar in laoreet sed, congue eu nunc.<p>
+      ";
+      mentor_email($manager_email,get_option('mentor_crm_cliente_name').' CRM - Información Confidencial de: '.$fullname,$body,array(1),$_POST['lid']);
   }
   $return = array('message' => 'Información Actualizada!','action' => 'location.reload();');
   wp_send_json($return);
@@ -235,8 +272,8 @@ function mentor_lead_personadetail() {
     'fullname' => $_POST['fullname'],
     'birthdate' => $_POST['birthdate'],
     'email' => $_POST['email'],
-    //'phone' => $_POST['phone'],
-    'time' => $_POST['time'],
+    'phone' => $_POST['phone'],
+    //'time' => $_POST['time'],
     'mobile_phone' => $_POST['mobile_phone'],
     'country' => $_POST['country'],
     'city' => $_POST['city']
@@ -251,6 +288,10 @@ add_action( 'wp_ajax_mentor_order_detail', 'mentor_order_detail' );
 function mentor_order_detail() {
   global $wpdb;
   if ($_POST['orid'] == 0) {
+      $ORID_open = $wpdb->get_var("SELECT ORID FROM {$wpdb->prefix}mentor_orders WHERE state = 1 AND LID=".$_POST['lid']);
+      if (!empty($ORID_open)) {
+          wp_send_json(array('message' => 'Existe una Ordern pendiente, #'.$ORID_open.' Para crear una nueva, cancele dicha orden.','action' => ""));
+      }
       $ORID = CreateOrder($_POST['lid'],$_POST['cost'],false);
       if (!empty($ORID)) {
           wp_send_json(array('message' => 'Botón creado exitosamente','action' => "location.reload();"));
@@ -273,13 +314,10 @@ function mentor_get_order_detail() {
   wp_send_json($wpdb->get_row("SELECT * FROM {$wpdb->prefix}mentor_orders WHERE ORID = ".$_POST['orid']));
 }
 
-
-
-
 add_action( 'wp_ajax_mentor_lead_capture', 'mentor_lead_capture' );
 add_action( 'wp_ajax_nopriv_mentor_lead_capture', 'mentor_lead_capture' );
 function mentor_lead_capture() {
-  global $wpdb;
+  global $wpdb,$crmcountries;
   if( !isset( $_POST['mentor-crm-front-nonce'] ) || !wp_verify_nonce( $_POST['mentor-crm-front-nonce'], 'mentor-form-lead-capture' ) ) return;
   $find_lead = $wpdb->get_row("SELECT LID FROM {$wpdb->prefix}mentor_leads WHERE email = '".$_POST['email']."'");
   if (!empty($find_lead)) {
@@ -291,18 +329,26 @@ function mentor_lead_capture() {
     $wpdb->update($wpdb->prefix."mentor_leads",$array_data,array('LID'=>$LID));
   }else{
     $sid = $wpdb->get_row( "SELECT SID FROM {$wpdb->prefix}mentor_steps ORDER BY order_val ASC")->SID;
+    $fullname = strtoupper($_POST['firstname'].' '.$_POST['lastname']);
+    $email = strtolower($_POST['email']);
+    $comments = $_POST['comments'];
+    $reason = $_POST['reason'];
+    $phone = $_POST['phone'];
+    $country = $_POST['country'];
+    $city = $_POST['city'];
+    $date = $_POST['date'];
     $array_data = array( 
-        'fullname' => strtoupper($_POST['firstname'].' '.$_POST['lastname']), 
-        'email' => strtolower($_POST['email']),
+        'fullname' => $fullname, 
+        'email' => $email,
         'step_ID' => $sid,
-        'phone' => $_POST['phone'],
-        'country' => $_POST['country'],
-        'city' => $_POST['city'],
-        'date' => $_POST['date'],
+        'phone' => $phone,
+        'country' => $country,
+        'city' => $city,
+        'date' => $date,
         'time' => '09:00:00',
-        'reason' => $_POST['reason'],
+        'reason' => $reason,
         'process' => $_POST['tag-consultatipo'],
-        'lead_comment' =>$_POST['comments']
+        'lead_comment' => $comments
     );
     $wpdb->insert($wpdb->prefix.'mentor_leads',$array_data);
     $LID = $wpdb->insert_id;
@@ -336,6 +382,74 @@ function mentor_lead_capture() {
       }
     }
   }
+  $register_date = date('d/m/Y h:i a');
+  $date = date('d/m/Y',strtotime($date));
+  // notify to admins emails
+  $body = "Un nuevo lead se ha registrado a las: {$register_date}
+    <table style='border:initial;'>
+      <tr>
+        <td>Nombre:</td><td>{$fullname}</td>
+      </tr>
+      <tr>
+        <td>Email:</td><td>{$email}</td>
+      </tr>
+      <tr>
+        <td>Teléfono:</td><td>{$phone}</td>
+      </tr>
+      <tr>
+        <td>País:</td><td>{$crmcountries[$country]}</td>
+      </tr>
+      <tr>
+        <td>Ciudad:</td><td>{$city}</td>
+      </tr>
+      <tr>
+        <td>Cirugía de Interes:</td><td>{$reason}</td>
+      </tr>
+      <tr>
+        <td>Fecha de Interes:</td><td>{$date}</td>
+      </tr>
+      <tr>
+        <td>Comentario:</td><td>{$comments}</td>
+      </tr>
+    </table>
+    <p>Fusce a hendrerit ipsum. Vestibulum at enim urna. Suspendisse potenti. Nunc scelerisque non magna eget venenatis. Donec vitae tincidunt mauris, mollis bibendum arcu. Donec eget dui in risus lobortis pellentesque id pretium nibh. Proin et massa non metus condimentum tempor vel in ante. Praesent turpis nisi, pulvinar in laoreet sed, congue eu nunc.<p>
+  ";
+  mentor_email(get_option('mentor_crm_admin_notify'),get_option('mentor_crm_cliente_name').' CRM - Nuevo Lead: '.$fullname.' - #'.$LID,$body);
+  // notify to user email
+  $body = "<b>Hola {$fullname}</b>
+  <p>Fusce a hendrerit ipsum. Vestibulum at enim urna. Suspendisse potenti. Nunc scelerisque non magna eget venenatis. Donec vitae tincidunt mauris, mollis bibendum arcu. Donec eget dui in risus lobortis pellentesque id pretium nibh. Proin et massa non metus condimentum tempor vel in ante. Praesent turpis nisi, pulvinar in laoreet sed, congue eu nunc.<p>
+    <a href='{$payment_url}' style='
+    margin: 20px auto;
+    display: block;
+    height: 40px;
+    line-height: 40px;
+    background-color: rgb(26, 69, 148);
+    font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+    color: #fff;
+    cursor: pointer;
+    border:none;
+    border-radius: 4px;
+    padding: 0px 16px;
+    text-decoration:none !important;
+    width: 115px;
+    text-align: center;' target='blank'>Paga con <strong>Wompi</strong></a>
+    <p>Fusce a hendrerit ipsum. Vestibulum at enim urna. Suspendisse potenti. Nunc scelerisque non magna eget venenatis. Donec vitae tincidunt mauris, mollis bibendum arcu. Donec eget dui in risus lobortis pellentesque id pretium nibh. Proin et massa non metus condimentum tempor vel in ante. Praesent turpis nisi, pulvinar in laoreet sed, congue eu nunc.</p>
+  ";
+  mentor_email($email,get_option('mentor_crm_cliente_name').' - Solicitud #'.$LID,$body);
   $return = array('msg'=>'ok','payment_url'=>$payment_url);
   wp_send_json($return);
+}
+add_action('admin_head', 'my_custom_fonts');
+
+function my_custom_fonts() {
+  echo '<style>
+    #toplevel_page_mentor-crm-admin *{
+        color: #fff !important;
+    }
+    #toplevel_page_mentor-crm-admin a .wp-menu-name {
+        background: linear-gradient(81deg, #de4686 0%, #ff8842 100%);
+    }
+  </style>';
 }

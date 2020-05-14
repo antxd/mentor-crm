@@ -53,13 +53,13 @@ h1.lead-title {
                 <form class="mentor-crm-ajax toggle-form-wrap toggle-form-true">
                   <input type="hidden" name="action" value="mentor_lead_personadetail">
                   <input type="hidden" name="lid" value="<?php echo $_GET['lid']; ?>">
-                  <p>NOMBRE:<input type="text" name="fullname" value="<?php echo $lead->fullname; ?>"></p>
-                  <p>E-MAIL:<input type="text" name="email" value="<?php echo $lead->email; ?>"></p>
-                  <!-- <p>TELÉFONO:<input type="text" name="phone" value="<?php echo $lead->phone; ?>"></p> -->
-                  <p>TELÉFONO MOVIL:<input type="text" name="mobile_phone" value="<?php echo $lead->mobile_phone; ?>"></p>
-                  <p>FECHA DE NACIMIENTO:<input type="text" name="birthdate" value="<?php echo $lead->birthdate; ?>"></p>
+                  <p>NOMBRE:<input type="text" name="fullname" value="<?php echo $lead->fullname; ?>" disabled="true"></p>
+                  <p>E-MAIL:<input type="text" name="email" value="<?php echo $lead->email; ?>" disabled="true"></p>
+                  <p>TELÉFONO:<input type="text" name="phone" value="<?php echo $lead->phone; ?>" disabled="true"></p>
+                  <!-- <p>TELÉFONO MOVIL:<input type="text" name="mobile_phone" value="<?php //echo $lead->mobile_phone; ?>"></p> -->
+                  <p>FECHA DE NACIMIENTO:<input type="text" name="birthdate" value="<?php echo $lead->birthdate; ?>" disabled="true"></p>
                   <p>PAÍS:
-                      <select name="country">
+                      <select name="country" disabled="true">
                         <?php
                         foreach ($crmcountries as $key => $country) {
                           echo "<option value='{$key}' ".selected($key,$lead->country,false).">{$country}</option>";
@@ -67,7 +67,7 @@ h1.lead-title {
                         ?>
                       </select>
                   </p>
-                  <p>CIUDAD:<input type="text" name="city" value="<?php echo $lead->city; ?>"></p>
+                  <p>CIUDAD:<input type="text" name="city" value="<?php echo $lead->city; ?>" disabled="true"></p>
                   <p>MENSAJE: <?php echo $lead->lead_comment; ?></p>
                   <p class="form-wrap text-center">
                       <button type="submit" class="mentor-crm-submit">ACTUALIZAR</button>
@@ -117,6 +117,7 @@ h1.lead-title {
                      <div class="crm-col-50 form-wrap">
                       <label><?php echo $manage_label; ?></label>
                       <select name="manage">
+                        <option value="0">POR CONFIRMAR</option>
                         <?php foreach ($managers as $key => $manage) { ?>
                               <option value="<?php echo $manage->MID; ?>" <?php selected($manage->MID,$lead->manage); ?>><?php echo $manage->name; ?></option>
                         <?php } ?>
@@ -264,18 +265,24 @@ jQuery(document).ready(function($){
       var $this = $(this)
       $this.addClass('mentor-sending')
       $.post(ajaxurl,$(this).serialize(),function(data,status){
-        console.log(data)
+          //console.log(data)
           $('.mentor-toasty').html(data.message).addClass('mentor-toasty-open')
           $this.removeClass('mentor-sending')
-          setTimeout("jQuery('.mentor-toasty').removeClass('mentor-toasty-open').html('');"+data.action,2000)
+          setTimeout("jQuery('.mentor-toasty').removeClass('mentor-toasty-open').html('');"+data.action,5000)
       })
       return false;
     })
     $('.toggle-form').click(function(e){
-        $('.toggle-form-wrap').toggleClass('toggle-form-true')
+          $('.toggle-form-wrap').toggleClass('toggle-form-true')
+          if (!$('.toggle-form-wrap').hasClass('toggle-form-true')) {
+              $('.toggle-form-wrap input, .toggle-form-wrap select').prop( "disabled", false );
+          }else{
+              $('.toggle-form-wrap input, .toggle-form-wrap select').prop( "disabled", true );
+          }
     })
     $('.mentor-crm-order-edit').click(function(){
         $('.mentor-payment-editor').slideUp()
+        $('.payment-save-text').text('ACTUALIZAR')
         $.post(ajaxurl,{action:'mentor_get_order_detail',orid:$(this).data('orid')},function(data,status){
           $('#orid').val(data.ORID)
           $('#reference-payment').val(data.reference)
@@ -283,13 +290,19 @@ jQuery(document).ready(function($){
           order_cost.set(parseInt(data.amount))
           $('.mentor-payment-editor').slideDown()
           $('html,body').animate({
-                  scrollTop: $('.mentor-payment-editor').offset().top
+                  scrollTop: $('.mentor-payment-editor').offset().top - 100
               }, 'slow');
         })
         return false;
     })
     $('.gen-btn-payment').click(function(e){
-        $('.mentor-payment-editor').slideToggle()
+        $('.mentor-payment-editor').hide()
+        $('.payment-save-text').text('CREAR')
+        $('#orid').val(0)
+        $('#reference-payment').val('')
+        $('#state-payment').val(1)
+        order_cost.set(0)
+        $('.mentor-payment-editor').slideDown()
     })
     $('#order-cost').change(function(){
       $('#order-cost-raw').val(order_cost.getNumber())

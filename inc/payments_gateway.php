@@ -77,7 +77,7 @@ function validate_payu_transaction(){
 function make_payment_checkout($transaction_reference){
   global $wpdb;
   $ORID = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}mentor_orders WHERE reference = '{$transaction_reference}'");
-  $responseUrl = trailingslashit(home_url()).'/thanks-for-your-purchase';
+  $responseUrl = trailingslashit(home_url()).'thanks-for-your-purchase';
   $payer = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}mentor_leads WHERE LID = {$ORID->LID}");
   $payerFullName = $payer->fullname;
   $email = $payer->email;
@@ -102,7 +102,7 @@ function make_payment_checkout($transaction_reference){
     $payulatam_apikey = get_option('mentor_crm_apikey_payu');
     $payulatam_merchantid = get_option('mentor_crm_merchantid_payu');
     $test = (MENTOR_CRM_SANBOX == false)?0:1;
-    $confirmationUrl = trailingslashit(home_url()).'/mentor-crm-payu-events';
+    $confirmationUrl = trailingslashit(home_url()).'mentor-crm-payu-events';
     $referenceCode = $transaction_reference;
     $firma_cadena = $payulatam_apikey."~".$payulatam_merchantid."~".$referenceCode."~".$amount."~COP";
     $signature = md5($firma_cadena);

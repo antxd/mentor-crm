@@ -16,6 +16,8 @@ function mentor_screen_options() {
     if (!empty($_POST['mentor_nonce_options'])) {
         if( !isset( $_POST['mentor_nonce_options'] ) || !wp_verify_nonce( $_POST['mentor_nonce_options'], 'mentor_form_options' ) ) return;
         update_option( 'mentor_crm_logo', $_POST['mentor_crm_logo_url'] );
+        update_option( 'mentor_crm_admin_notify', $_POST['mentor_crm_admin_notify'] );
+        update_option( 'mentor_crm_terms_url', $_POST['mentor_crm_terms_url'] );
         update_option( 'mentor_crm_cliente_name', $_POST['mentor_crm_cliente_name'] );
         $mentor_crm_payment_sanbox = (isset($_POST['mentor_crm_payment_sanbox']))?true:false;
         update_option( 'mentor_crm_payment_sanbox', $mentor_crm_payment_sanbox );
@@ -95,7 +97,7 @@ function mentor_screen_options() {
       }
     }
   }//end POST
-  
+
   $sid = (!empty($_GET['sid']))?$_GET['sid']:0;
   $mid = (!empty($_GET['mid']))?$_GET['mid']:0;
   $order_val = 0;
@@ -242,12 +244,25 @@ function mentor_screen_options() {
             <?php wp_nonce_field( 'mentor_form_options','mentor_nonce_options'); ?>
             <div class="crm-row">
                 <div class="crm-col-30">
-                  <label>Logo</label><br>
-                  <img src="<?php echo get_option( 'mentor_crm_logo' ); ?>" id="mentor_crm_logo_helper">
-                  <input type="hidden" name="mentor_crm_logo_url" id="mentor_crm_logo_url" value="<?php echo get_option( 'mentor_crm_logo' ); ?>">
-                  <button type='button' class="button-secondary" id="mentor_crm_logo_select">Seleccionar</button><br><br>
-                  <label>Título</label><br>
-                  <input type="text" name="mentor_crm_cliente_name" value="<?php echo get_option('mentor_crm_cliente_name'); ?>"><br><br>
+                  <div class="form-wrap">
+                     <label>Logo</label>
+                     <img src="<?php echo get_option( 'mentor_crm_logo' ); ?>" id="mentor_crm_logo_helper">
+                     <input type="hidden" name="mentor_crm_logo_url" id="mentor_crm_logo_url" value="<?php echo get_option( 'mentor_crm_logo' ); ?>">
+                     <button type='button' class="button-secondary" id="mentor_crm_logo_select">Seleccionar</button>
+                  </div>
+                  <div class="form-wrap">
+                      <label>Empresa</label>
+                      <input type="text" name="mentor_crm_cliente_name" value="<?php echo get_option('mentor_crm_cliente_name'); ?>">
+                  </div>
+                  <div class="form-wrap">
+                      <label>Notificar nuevos leads a:</label>
+                      <input type="text" name="mentor_crm_admin_notify" value="<?php echo get_option('mentor_crm_admin_notify'); ?>" placeholder="info@ejemplo.com">
+                      <small>Nota: Para usar varios separar por coma.</small>
+                  </div>
+                  <div class="form-wrap">
+                      <label>Enlace de Términos y Condiciones</label>
+                      <input type="text" name="mentor_crm_terms_url" value="<?php echo get_option('mentor_crm_terms_url'); ?>">
+                  </div>
                 </div>
                 <div class="crm-col-70">
                   <h1>Opciones de Pago</h1>

@@ -275,7 +275,6 @@ ul.mentor-crm-pagination li {
   width: 100%;
   height: 100%;
 }
-
 h1.lead-title {
     padding: 0 15px;
     display: block;
@@ -461,6 +460,9 @@ h1.lead-title {
     -webkit-appearance: none;
     background: #ececec;
     border: none;
+    box-shadow: initial;
+    color: #000;
+    cursor: text;
 }
 .toggle-form-wrap.toggle-form-true select {
     -webkit-appearance: none;
@@ -492,4 +494,7 @@ label.mentor_crm_payment_method_selector {
 .mentor-payment-editor{
     padding-top: 1em;
     display: none;
+}
+#reference-payment {
+    background: #d2d2d2;
 }

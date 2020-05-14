@@ -56,7 +56,7 @@ function CreateOrder($LID,$amount = 200000,$return_url= true){
         array( '%d' ) 
     );
     if ($return_url) {
-        return trailingslashit(home_url()).'/mentor-crm-payment/'.$reference_hash;
+        return trailingslashit(home_url()).'mentor-crm-payment/'.$reference_hash;
     }else{
         return $ORID;
     }
@@ -174,28 +174,33 @@ function mentor_email_calendar($data = array()){
     END:VCALENDAR";
 }
 
-function mentor_email($to,$subject,$body,$type = 1,$options = array(),$headers = null){
+function mentor_email($to,$subject,$body,$include = array(),$lid = null,$headers = null){
     global $wpdb,$phpmailer;
     $logo = get_option('mentor_crm_logo');
     $site_url = home_url();
-    $body ='<div style="margin:0;font-family: Arial, Helvetica, sans-serif;background: #f7f5ff;width: 100%;height: 100%;">
-            <div style="max-width: 640px;display: block;margin: 0 auto;padding: 30px;">
-                <div style="width: 100%;height: 80px;background: #fff;border-bottom:2px solid #e0dede;">
-                    <a href="'.$site_url.'" style="display: block;margin: 0 auto;width: 200px;padding-top: 10px;">
-                    <img src="'.$logo.'" style="width: 100%;">
+    $first_admin = explode(',', get_option('mentor_crm_admin_notify'));
+    $client_name = get_option('mentor_crm_cliente_name');
+    $year = date('Y');
+    $body ='<div style="margin:0;font-family: Arial, Helvetica, sans-serif;background: #f7f5ff;width: 100%;height: 100%;box-sizing:border-box;">
+            <div style="max-width: 600px;display: block;margin: 0 auto;padding: 30px;box-sizing:border-box;">
+                <div style="width: 100%;height: 80px;background: #fff;border-bottom:2px solid #e0dede;box-sizing:border-box;">
+                    <a href="'.$site_url.'" style="display: block;margin: 0 auto;width:200px;padding:10px;box-sizing:border-box;" title="'.$client_name.'">
+                    <img src="'.$logo.'" style="width: 100%;box-sizing:border-box;" alt="'.$client_name.'"/>
                     </a>
                 </div>
                 <div style="background:#fff;padding:30px 50px;width:100%;display:block;max-width: 100%;box-sizing: border-box;" class="mensaje">'
                 .$body.
                 '</div>
-                <div style="width: 100%;height: 80px;background: #e0dede;text-align:center">
-                    <p>Clínica Dhara &copy; 2020</p>
+                <div style="width: 100%;padding:30px;background: #e0dede;text-align:center;box-sizing: border-box;">
+                    <p><b>'.$client_name.' &copy; '.$year.'</b></p>
+                    <p style="font-size: 80%;color: #636363;box-sizing:border-box;">Este correo y cualquier archivo transmitidos con él son confidenciales y previsto solamente para el uso del individuo o de la entidad a quienes se tratan. Si UD. ha recibido este correo por error por favor notificar a '.$first_admin.'. Por favor considere que cualquier opinión presentada en este correo es solamente la del autor y no representa necesariamente la opinión de '.$client_name.' Finalmente, el receptor debe comprobar este correo y cualquier anexo del mismo para identificar la presencia de virus. La compañía no acepta ninguna responsabilidad por ningún daño causado por algún virus transmitido en este correo.</p>
                 </div>
             </div>
             </div>';
-    if ($type == 2) {
-        if (!empty($options['lid'])) {
-            $imgs_src = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}mentor_dhara_lead_images WHERE LID = ".$options['lid']);
+
+    if (in_array(1, $include)) {
+        if (!empty($lid)) {
+            $imgs_src = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}mentor_leads_images WHERE LID = {$lid}");
             add_action( 'phpmailer_init', function(&$phpmailer)use($imgs_src){
                 $phpmailer->SMTPKeepAlive = true;
                 $phpmailer->IsHTML(true);
@@ -227,9 +232,9 @@ function mentor_email($to,$subject,$body,$type = 1,$options = array(),$headers =
             });
         }
     }
-    if ($type == 3) {
-        if (!empty($options['lid'])) {
-            $calendar_file = 
+    if (in_array(2, $include)) {
+        if (!empty($lid)) {
+            $calendar_file = mentor_email_calendar($lid);
             add_action( 'phpmailer_init', function(&$phpmailer)use($calendar_file){
                 $phpmailer->SMTPKeepAlive = true;
                 $phpmailer->IsHTML(true);
@@ -259,13 +264,13 @@ function print_state_order($state=1,$echo = false){
     }
 }
 $payment_state_text = array(1=>'PENDIENTE',2=>'PAGADO',3=>'CANCELADO/EXP.');
-$managers = array(
+/*$managers = array(
     0 => 'POR CONFIRMAR',
     1 => 'Dr. Hernán Amarís',
     2 => 'Dr. Giovanny Mera',
     3 => 'Dr. Alejandro Afanador',
     4 => 'Dr. Octavio Carrascal',
-  );
+);*/
 $crmcountries = array(
     "AL" => 'Albania',
     "DZ" => 'Algeria',
