@@ -8,7 +8,7 @@ function validate_wompi_transaction(){
     $transaction_id = $json->data->transaction->id;
     $wompi_request = wp_remote_get( ENDPOINT_WOMPI.'transactions/'.$transaction_id );
     $result = json_decode( wp_remote_retrieve_body($wompi_request) );
-    $extra_info = $wpdb->get_var("SELECT extra_info FROM {$wpdb->prefix}mentor_orders WHERE reference = '{$transaction_reference}'");
+    //$extra_info = $wpdb->get_var("SELECT extra_info FROM {$wpdb->prefix}mentor_orders WHERE reference = '{$transaction_reference}'");
     if ( is_object( $result ) && ! is_wp_error( $result ) ) {
       $wompi_estado = array(
             'APPROVED'=>2,
@@ -148,7 +148,7 @@ function make_payment_thanks(){
             $estadoTransaction = $wompi_estado_text[$result->data->status];
             $transactionId = $result->data->id;
             $referenceCode = $result->data->reference;
-            $transactionValue = floatval($result->data->amount_in_cents/1000);
+            $transactionValue = get_amount_in_tens($result->data->amount_in_cents);
         }
     }
   }else{
@@ -185,6 +185,9 @@ function make_payment_thanks(){
   }
   .mentor-crm-table tr:nth-child(even) {
     background-color: #dddddd;
+  }
+  .mentor-crm-tabletable tr:nth-child(odd) td{
+    background: transparent;
   }
   .mentor-crm-container {
     max-width: 1100px;

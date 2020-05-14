@@ -75,6 +75,9 @@ function CreateOrder($LID,$amount = 200000,$return_url= true){
 function get_amount_in_cents( $amount ) {
     return (int) ( $amount * 100 );
 }
+function get_amount_in_tens( $amount ) {
+    return (int) ( $amount / 100 );
+}
 /**
  * Generate Log of data lead change.
  *
