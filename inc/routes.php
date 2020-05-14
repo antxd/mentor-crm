@@ -40,7 +40,8 @@ function josem_plugin_query_vars($vars) {
 add_filter( 'request', 'josem_rewrite_filter_request' );
 function josem_rewrite_filter_request($vars){
     if( isset( $vars['mentor-crm-wompi-events'] ) ) {
-        validate_wompi_transaction();exit;
+        $json = file_get_contents('php://input');
+        validate_wompi_transaction($json);exit;
     }
     if( isset( $vars['mentor-crm-payu-events'] ) ) {
         validate_payu_transaction();exit;

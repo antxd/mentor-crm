@@ -1,7 +1,6 @@
 <?php
-function validate_wompi_transaction(){
+function validate_wompi_transaction($json){
   global $wpdb;
-  $json = file_get_contents('php://input');
   file_put_contents(time().".json",$json);
   $json = json_decode($json);
   if (!empty($json->event) && $json->event == 'transaction.updated') {
