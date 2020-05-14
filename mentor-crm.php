@@ -11,7 +11,7 @@ Author URI: https://jdmm.xyz
 
 */
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
-define( 'MENTOR_CRM_FOLDER',dirname(__DIR__));
+define( 'MENTOR_CRM_FOLDER',basename(dirname(__FILE__)));
 define( 'MENTOR_CRM_SANBOX',get_option('mentor_crm_payment_sanbox'));
 define( 'MENTOR_CRM_PAYMENT_METHOD',get_option('mentor_crm_payment_method'));
 //$mentor_crm_wompi_sanbox = (empty(get_option('mentor_crm_payment_sanbox')))?false:get_option('mentor_crm_payment_sanbox');
