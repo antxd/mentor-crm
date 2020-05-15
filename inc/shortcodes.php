@@ -388,7 +388,7 @@ function mentor_lead_capture_form( $atts ) {
         <button class="mentor-crm-modal-close">&times;</button>
         <img src="<?php echo plugins_url('/'.MENTOR_CRM_FOLDER.'/assets/dhara-thanks.png'); ?>">
 		<h1>Gracias</h1>
-		<h2>Serás redireccionado al checkout, para confirmar tu solicitud de cita.<br><b>Costo:</b> $ 200.000</h2>
+		<h2>Te contactaremos para confirmar tu cita.</h2>
 	</div>
 </div>
 <script type="text/javascript">

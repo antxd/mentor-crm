@@ -257,7 +257,7 @@ function mentor_screen_options() {
                   <div class="form-wrap">
                       <label>Notificar nuevos leads a:</label>
                       <input type="text" name="mentor_crm_admin_notify" value="<?php echo get_option('mentor_crm_admin_notify'); ?>" placeholder="info@ejemplo.com">
-                      <small>Nota: Para usar varios separar por coma.</small>
+                      <small style="float: initial;">Nota: Para usar varios separar por coma.</small>
                   </div>
                   <div class="form-wrap">
                       <label>Enlace de Términos y Condiciones</label>
