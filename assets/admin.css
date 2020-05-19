@@ -235,7 +235,7 @@ ul.mentor-crm-pagination li {
     margin: 15px 0px;
 }
 .mentor-general-wraps {
-    width: 100%;
+    width: calc(100% - 20px);
 }
 /*FROM DETAILS*/
 .crm-row:before,

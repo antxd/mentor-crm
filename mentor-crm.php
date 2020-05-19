@@ -11,8 +11,8 @@ Author URI: https://jdmm.xyz
 
 */
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
-define( 'MENTOR_CRM_PLUGIN', plugin_dir_path( __FILE__ ) );
-define( 'MENTOR_CRM_FOLDER',basename(dirname(__FILE__)));
+define( 'MENTOR_CRM_PATH', untrailingslashit(plugin_dir_path( __FILE__ )) );
+define( 'MENTOR_CRM_FOLDER',untrailingslashit(basename(MENTOR_CRM_PATH))  );
 define( 'MENTOR_CRM_SANBOX',get_option('mentor_crm_payment_sanbox'));
 define( 'MENTOR_CRM_PAYMENT_METHOD',get_option('mentor_crm_payment_method'));
 if (MENTOR_CRM_SANBOX) {
@@ -22,7 +22,7 @@ if (MENTOR_CRM_SANBOX) {
     define('ENDPOINT_WOMPI', 'https://sandbox.wompi.co/v1/');
   }
   if (MENTOR_CRM_PAYMENT_METHOD == 2) {
-    define('ENDPOINT_PAYU', 'https://sandbox.checkout.payulatam.com/ppp-web-gateway-payu/"');
+    define('ENDPOINT_PAYU', 'https://sandbox.checkout.payulatam.com/ppp-web-gateway-payu/');
   }
 }else{
   if (MENTOR_CRM_PAYMENT_METHOD == 1) {
@@ -31,14 +31,14 @@ if (MENTOR_CRM_SANBOX) {
     define('ENDPOINT_WOMPI', 'https://production.wompi.co/v1/');
   }
   if (MENTOR_CRM_PAYMENT_METHOD == 2) {
-    define('ENDPOINT_PAYU', 'https://checkout.payulatam.com/ppp-web-gateway-payu/"');
+    define('ENDPOINT_PAYU', 'https://checkout.payulatam.com/ppp-web-gateway-payu/');
   }
 }
-include_once 'inc/helper.php';
-include_once 'inc/shortcodes.php';
-include_once 'inc/routes.php';
-include_once 'inc/options.php';
-include_once 'inc/payments_gateway.php';
+include_once MENTOR_CRM_PATH.'/inc/helper.php';
+include_once MENTOR_CRM_PATH.'/inc/shortcodes.php';
+include_once MENTOR_CRM_PATH.'/inc/routes.php';
+include_once MENTOR_CRM_PATH.'/inc/options.php';
+include_once MENTOR_CRM_PATH.'/inc/payments_gateway.php';
 function install_mentor_crm(){
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
@@ -121,12 +121,15 @@ function install_mentor_crm(){
           ) $charset_collate;";
     require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
     dbDelta( $sql );
-    $wpdb->query($wpdb->prepare("ALTER TABLE `{$table_name}` AUTO_INCREMENT = 100;"));
-    dbDelta( $sql1 );
+    if ($wpdb->get_var("SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = '{$wpdb->dbname}' AND TABLE_NAME = '{$table_name}'") < 100) {
+      $wpdb->query($wpdb->prepare("ALTER TABLE `{$table_name}` AUTO_INCREMENT = 100;"));
+    }    dbDelta( $sql1 );
     dbDelta( $sql2 );
     dbDelta( $sql3 );
     dbDelta( $sql4 );
-    $wpdb->query($wpdb->prepare("ALTER TABLE `{$table_name4}` AUTO_INCREMENT = 1000;"));
+    if ($wpdb->get_var("SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = '{$wpdb->dbname}' AND TABLE_NAME = '{$table_name4}'") < 1000) {
+      $wpdb->query($wpdb->prepare("ALTER TABLE `{$table_name4}` AUTO_INCREMENT = 1000;"));
+    }
     dbDelta( $sql5 );
     add_role( 'crm_manager', 'CRM Manager', array( 'read' => true,'edit_posts' => false,'delete_posts' => false,'level_0' => true, 'manage_options' => true) );
     if(empty(get_option( 'mentor_crm_logo' ))){
@@ -138,7 +141,6 @@ function install_mentor_crm(){
     if(empty(get_option( 'mentor_crm_payment_method' ))){
         update_option( 'mentor_crm_payment_method', 1 );
     }
-
     josem_plugin_rewrites();
     flush_rewrite_rules();
 }
@@ -146,7 +148,7 @@ register_activation_hook( __FILE__, 'install_mentor_crm' );
 
 add_action( 'admin_menu', 'admin_screens_mentor_crm' );
 function admin_screens_mentor_crm() {
-    add_menu_page('Mentor CRM', 'CONTROL DE<br> CITAS', 'manage_options', 'mentor-crm-admin', 'mentor_screen_initial',null,1);
+    add_menu_page('Mentor CRM', 'Control de <br> Citas', 'manage_options', 'mentor-crm-admin', 'mentor_screen_initial',null,1);
     add_submenu_page( 'mentor-crm-admin', 'Mentor CRM - Opciones', __('Opciones'), 'manage_options', 'mentor-crm-options', 'mentor_screen_options');
 }
 function mentor_screen_initial() {
@@ -178,17 +180,18 @@ function mentor_screen_initial() {
   }
 }
 
-add_action( 'admin_init', 'mentor_crm_remove_menu_pages' );
-function mentor_crm_remove_menu_pages() {
-  if ( wp_get_current_user()->roles[0] == 'crm_manager' ){
-    foreach ($GLOBALS['menu'] as $key => $value) {
-      if ($value[2] != 'mentor-crm-admin') {
-          remove_menu_page($value[2]);
+if ( ! has_action( 'admin_init', 'mentor_crm_remove_menu_pages' ) ){
+  add_action( 'admin_init', 'mentor_crm_remove_menu_pages' );
+  function mentor_crm_remove_menu_pages() {
+    if ( wp_get_current_user()->roles[0] == 'crm_manager' ){
+      foreach ($GLOBALS['menu'] as $key => $value) {
+        if ($value[2] != 'mentor-crm-admin') {
+            remove_menu_page($value[2]);
+        }
       }
     }
   }
 }
-
 add_action( 'wp_ajax_mentor_lead_detail', 'mentor_lead_detail' );
 function mentor_lead_detail() {
   global $wpdb;
@@ -438,16 +441,4 @@ function mentor_lead_capture() {
   mentor_email($email,get_option('mentor_crm_cliente_name').' - Solicitud #'.$LID,$body);
   $return = array('msg'=>'ok','payment_url'=>$payment_url);
   wp_send_json($return);
-}
-add_action('admin_head', 'my_custom_fonts');
-
-function my_custom_fonts() {
-  echo '<style>
-    #toplevel_page_mentor-crm-admin *{
-        color: #fff !important;
-    }
-    #toplevel_page_mentor-crm-admin a .wp-menu-name {
-        background: linear-gradient(81deg, #de4686 0%, #ff8842 100%);
-    }
-  </style>';
 }
