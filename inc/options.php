@@ -6,13 +6,19 @@ function mentor_screen_options() {
   wp_enqueue_style( 'wp-color-picker' );
   wp_enqueue_script( 'wp-color-picker' );
   wp_enqueue_style( 'mentor-crm', plugins_url('/'.MENTOR_CRM_FOLDER.'/assets/admin.css',false,'1.0.0') );
-  if (!empty($_GET['delete-sid'])) {
-      $wpdb->delete($wpdb->prefix.'mentor_steps', array( 'SID' => $_GET['delete-sid'] ) );
-      $notices .='<div class="notice notice-error is-dismissible">
-                      <p>Categoría #'.$_GET['delete-sid'].' Eliminada!</p>
-                  </div>';
-  }
-  if (!empty($_POST)) {
+    // Actions
+    if (!empty($_GET['delete-sid'])) {
+        $wpdb->delete($wpdb->prefix.'mentor_steps', array( 'SID' => $_GET['delete-sid'] ) );
+        $notices .='<div class="notice notice-error is-dismissible">
+                        <p>Categoría #'.$_GET['delete-sid'].' Eliminada!</p>
+                    </div>';
+    }
+    if (!empty($_GET['delete-mid'])) {
+        $wpdb->delete($wpdb->prefix.'mentor_managers', array( 'MID' => $_GET['delete-mid'] ) );
+        $notices .='<div class="notice notice-error is-dismissible">
+                        <p>Especialista #'.$_GET['delete-mid'].' Eliminado!</p>
+                    </div>';
+    }
     if (!empty($_POST['mentor_nonce_options'])) {
         if( !isset( $_POST['mentor_nonce_options'] ) || !wp_verify_nonce( $_POST['mentor_nonce_options'], 'mentor_form_options' ) ) return;
         update_option( 'mentor_crm_logo', $_POST['mentor_crm_logo_url'] );
@@ -96,7 +102,6 @@ function mentor_screen_options() {
                       </div>';  
       }
     }
-  }//end POST
 
   $sid = (!empty($_GET['sid']))?$_GET['sid']:0;
   $mid = (!empty($_GET['mid']))?$_GET['mid']:0;
