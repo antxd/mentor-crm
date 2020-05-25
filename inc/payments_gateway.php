@@ -34,6 +34,16 @@ if (!function_exists('validate_wompi_transaction')) {
           array('state'=>(int)$wompi_estado[$result->data->status],'external_id'=>$transaction_id),
           array('ORID'=>$ORID)
         );
+        if ($result->data->status == 'APPROVED') {
+            $lid_reference_hash = $wpdb->get_var("SELECT LID FROM {$wpdb->prefix}mentor_orders WHERE reference='{$transaction_reference}'");
+            $lead = $wpdb->get_row("SELECT email,fullname FROM {$wpdb->prefix}mentor_leads WHERE LID=".$lid_reference_hash);
+            $fullname = $lead->fullname;
+            $email = $lead->email;
+            ob_start();
+            include MENTOR_CRM_PATH.'/inc/emails/payment-done-lead.php';
+            $payment_done_lead = ob_get_clean();
+            mentor_email($email,'Pago recibido cita '.get_option('mentor_crm_cliente_name'),$payment_done_lead);
+        }
       }
     }
     status_header(200);
