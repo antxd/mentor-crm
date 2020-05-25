@@ -396,9 +396,7 @@ jQuery(document).ready(function($){
 	$('input[name="tag-consultatipo"]').click(function(){
 		if ($(this).val() == 1) {
 			$('.mentor-crm-images-tag').slideDown()
-			//$('.check-required').prop('required',true)
 		}else{
-			//$('.check-required').prop('required',false)
 			$('.mentor-crm-images-tag').slideUp()
 		}
 	})
@@ -447,12 +445,13 @@ jQuery(document).ready(function($){
                 if (data.msg == 'ok') {
                     $this.trigger('reset')
                     $('.mentor-crm-modal-response').fadeIn();
+                    $('#foto1_name,#foto2_name').hide().text('')
                     setTimeout("location.href = '"+data.payment_url+"'",3000)
                 }else{
                     alert('Error, intenta de nuevo.')
                 }
                 $this.removeClass('form-ajax-sending')
-                console.log(data)        
+                //console.log(data)        
 		    }
 		});
 		return false;

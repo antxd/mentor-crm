@@ -48,7 +48,7 @@ h1.lead-title {
           <h1 class="lead-title"><?php echo ucwords($lead_title); ?></h1>
           <div class="crm-col-30">
             <div class="mentor-crm-detail">
-              <h2>INFORMACIÓN PERSONAL <span class="dashicons dashicons-edit toggle-form"></span></h2>
+              <h2>INFORMACIÓN PERSONAL<span class="dashicons dashicons-edit toggle-form"></span></h2>
               <div class="mentor-crm-detail-content">
                 <form class="mentor-crm-ajax toggle-form-wrap toggle-form-true">
                   <input type="hidden" name="action" value="mentor_lead_personadetail">
@@ -82,6 +82,7 @@ h1.lead-title {
               <form class="mentor-crm-ajax">
                 <input type="hidden" name="action" value="mentor_lead_detail">
                 <input type="hidden" name="lid" value="<?php echo $_GET['lid']; ?>">
+                <input type="hidden" name="send_confirm_email" id="send_confirm_email" value="false">
                   <div class="mentor-crm-detail-content crm-row">
                     <div class="crm-col-50 form-wrap">
                       <label><?php echo $booking_date_label; ?></label>
@@ -137,7 +138,7 @@ h1.lead-title {
                      <div class="crm-col-50 form-wrap">
                       <label><?php echo $confirm_date_label; ?></label>
                       <label class="switch">
-                        <input type="checkbox" name="confirm_date" value="true" <?php checked(1,$lead->confirm_date); ?>>
+                        <input type="checkbox" name="confirm_date" id="confirm_date" value="true" <?php checked(1,$lead->confirm_date); ?>>
                         <span class="slider round"></span>
                       </label>
                     </div>
@@ -271,6 +272,13 @@ jQuery(document).ready(function($){
           setTimeout("jQuery('.mentor-toasty').removeClass('mentor-toasty-open').html('');"+data.action,5000)
       })
       return false;
+    })
+    $('#confirm_date').click(function(){
+        if ($('#confirm_date').is(":checked")) {
+            $('#send_confirm_email').val('false')
+        }else{
+            $('#send_confirm_email').val('true')
+        }
     })
     $('.toggle-form').click(function(e){
           $('.toggle-form-wrap').toggleClass('toggle-form-true')

@@ -230,7 +230,7 @@ function mentor_screen_options() {
                           <a href="'.admin_url('admin.php?page=mentor-crm-options').'&mid='.$manager->MID.'" class="button button-primary">
                               Editar
                           </a>
-                          <a href="'.admin_url('admin.php?page=mentor-crm-options').'&delete-sid='.$manager->MID.'" class="button button-secondary" onclick="return confirm(\'¿Quieres eliminar el regitro #'.$manager->MID.'?\')">
+                          <a href="'.admin_url('admin.php?page=mentor-crm-options').'&delete-mid='.$manager->MID.'" class="button button-secondary" onclick="return confirm(\'¿Quieres eliminar el regitro #'.$manager->MID.'?\')">
                               Eliminar
                           </a>
                         </td>
