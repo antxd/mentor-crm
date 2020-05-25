@@ -4,11 +4,8 @@ Plugin Name: Mentor-CRM - ClinicaDahara
 Plugin URI: https://bementor.co/
 Description: CRM Adaptable, provisto por https://bementor.co/
 Author: Jose M
-Version: 1.0-140520
+Version: 1.1-250520
 Author URI: https://jdmm.xyz
-
-={zOCvi@GF?7
-
 */
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 define( 'MENTOR_CRM_PATH', untrailingslashit(plugin_dir_path( __FILE__ )) );
