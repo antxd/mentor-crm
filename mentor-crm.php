@@ -194,7 +194,7 @@ if ( ! has_action( 'admin_init', 'mentor_crm_remove_menu_pages' ) ){
 }
 add_action( 'wp_ajax_mentor_lead_detail', 'mentor_lead_detail' );
 function mentor_lead_detail() {
-  global $wpdb;
+  global $wpdb,$crmcountries;
   $state = (!empty($_POST['state']))?1:0;
   $confirm_date = (!empty($_POST['confirm_date']))?1:0;
   // update log logic
@@ -220,6 +220,29 @@ function mentor_lead_detail() {
     'state' => $state
 
   ),array('LID'=>$_POST['lid']));
+  if ($_POST['send_confirm_email'] == 'true') {
+      $lead = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}mentor_leads WHERE LID=".$_POST['lid']);
+      $manager = $wpdb->get_row("SELECT email,name,phone FROM {$wpdb->prefix}mentor_managers WHERE MID={$lead->manage}");
+      $fullname = $lead->fullname;
+      $lead_email = $lead->email;
+      $lead_date = $lead->date;
+      $lead_time = $lead->time;
+      $lead_phone = $lead->phone;
+      $lead_reason = $lead->reason;
+      $lead_location = $crmcountries[$lead->country].', '.$lead->city;
+      $manager_name = $manager->name;
+      $manager_phone = $manager->phone;
+      $manager_email = $manager->email;
+      $tipo_cita = array(1=>'TELE ORIENTACIÓN MÉDICA',2=>'PRESENCIAL',3=>'PREANESTESIA');
+      ob_start();
+      include MENTOR_CRM_PATH.'/inc/emails/confirm-date-lead.php';
+      $confirm_date_lead = ob_get_clean();
+      mentor_email($lead_email,'Cita '.get_option('mentor_crm_cliente_name'),$confirm_date_lead,array(2),$_POST['lid']);
+      ob_start();
+      include MENTOR_CRM_PATH.'/inc/emails/confirm-date-manager.php';
+      $confirm_date_manager = ob_get_clean();
+      mentor_email($manager_email,get_option('mentor_crm_cliente_name').' - Cita '.$tipo_cita[$lead->process].' confirmada',$confirm_date_manager,array(2),$_POST['lid']);
+  }
   if (!empty($_POST['payment_button'])) {
       //send last payment button to lead
       $reference_hash = $wpdb->get_var("SELECT reference FROM {$wpdb->prefix}mentor_orders WHERE LID=".$_POST['lid']);
@@ -227,39 +250,26 @@ function mentor_lead_detail() {
       $fullname = $lead->fullname;
       $email = $lead->email;
       $payment_url = trailingslashit(home_url()).'mentor-crm-payment/'.$reference_hash;
-      $body = "<b>Hola {$fullname}</b>
-      <p>Fusce a hendrerit ipsum. Vestibulum at enim urna. Suspendisse potenti. Nunc scelerisque non magna eget venenatis. Donec vitae tincidunt mauris, mollis bibendum arcu. Donec eget dui in risus lobortis pellentesque id pretium nibh. Proin et massa non metus condimentum tempor vel in ante. Praesent turpis nisi, pulvinar in laoreet sed, congue eu nunc.<p>
-        <a href='{$payment_url}' style='
-        margin: 20px auto;
-        display: block;
-        height: 40px;
-        line-height: 40px;
-        background-color: rgb(26, 69, 148);
-        font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
-        font-weight: 400;
-        font-size: 14px;
-        color: #fff;
-        cursor: pointer;
-        border:none;
-        border-radius: 4px;
-        padding: 0px 16px;
-        text-decoration:none !important;
-        width: 115px;
-        text-align: center;' target='blank'>Paga con <strong>Wompi</strong></a>
-        <p>Fusce a hendrerit ipsum. Vestibulum at enim urna. Suspendisse potenti. Nunc scelerisque non magna eget venenatis. Donec vitae tincidunt mauris, mollis bibendum arcu. Donec eget dui in risus lobortis pellentesque id pretium nibh. Proin et massa non metus condimentum tempor vel in ante. Praesent turpis nisi, pulvinar in laoreet sed, congue eu nunc.</p>
-      ";
-      mentor_email($email,get_option('mentor_crm_cliente_name').' - Pago #'.$reference_hash,$body);
-      echo true;die;
+      ob_start();
+      include MENTOR_CRM_PATH.'/inc/emails/payment-need-lead.php';
+      $payment_need_lead = ob_get_clean();
+      mentor_email($email,get_option('mentor_crm_cliente_name').' - Pago #'.$reference_hash,$payment_need_lead);
   }
   if (!empty($_POST['email_button'])) {
       //logic send email to manager
       $manager = $wpdb->get_row("SELECT email,name FROM {$wpdb->prefix}mentor_managers WHERE MID=".$_POST['manage']);
       $manager_email = $manager->email;
       $manager_name = $manager->name;
-      $fullname = $wpdb->get_var("SELECT fullname FROM {$wpdb->prefix}mentor_leads WHERE LID=".$_POST['lid']);
-      $body = "<b>Hola {$manager_name}</b><br>
-        <p>Fusce a hendrerit ipsum. Vestibulum at enim urna. Suspendisse potenti. Nunc scelerisque non magna eget venenatis. Donec vitae tincidunt mauris, mollis bibendum arcu. Donec eget dui in risus lobortis pellentesque id pretium nibh. Proin et massa non metus condimentum tempor vel in ante. Praesent turpis nisi, pulvinar in laoreet sed, congue eu nunc.<p>
-      ";
+      $lead = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}mentor_leads WHERE LID=".$_POST['lid']);
+      $fullname = $lead->fullname;
+      $lead_email = $lead->email;
+      $lead_phone = $lead->phone;
+      $lead_reason = $lead->reason;
+      $lead_location = $crmcountries[$lead->country].', '.$lead->city;
+      $lead_comment = $lead->lead_comment;
+      ob_start();
+      include MENTOR_CRM_PATH.'/inc/emails/admin-manager-lead-info.php';
+      $body = ob_get_clean();
       mentor_email($manager_email,get_option('mentor_crm_cliente_name').' CRM - Información Confidencial de: '.$fullname,$body,array(1),$_POST['lid']);
   }
   $return = array('message' => 'Información Actualizada!','action' => 'location.reload();');
@@ -275,7 +285,7 @@ function mentor_lead_personadetail() {
     'email' => $_POST['email'],
     'phone' => $_POST['phone'],
     //'time' => $_POST['time'],
-    'mobile_phone' => $_POST['mobile_phone'],
+    //'mobile_phone' => $_POST['mobile_phone'],
     'country' => $_POST['country'],
     'city' => $_POST['city']
   ),array('LID'=>$_POST['lid']));
@@ -357,88 +367,47 @@ function mentor_lead_capture() {
   $payment_url = CreateOrder($LID);
   if(isset($_FILES)){
     foreach ($_FILES['lead_image']['tmp_name'] as $key => $lead_image) {
-      if( !empty( $_FILES['image']['error'][$key])) {
-          $return = array('msg'=>'error');
-          wp_send_json($return);
-      }
-      $name = $_FILES['lead_image']['name'][$key];
-      $target_file = basename($name);
-      // Select file type
-      $imageFileType = strtolower(pathinfo($target_file,PATHINFO_EXTENSION));
-      // Valid file extensions
-      $extensions_arr = array("jpg","jpeg","png","gif");
-      // Check extension
-      if( in_array($imageFileType,$extensions_arr) ){
-        // Convert to base64 
-        $image_base64 = base64_encode(file_get_contents($lead_image) );
-        $image = 'data:image/'.$imageFileType.';base64,'.$image_base64;
-        // Insert record
-        $wpdb->insert( 
-          $wpdb->prefix.'mentor_leads_images', 
-          array( 
-            'LID' => $LID, 
-            'image' => $image,
-          )
-        );
+      if( $_FILES['lead_image']['error'][$key] === UPLOAD_ERR_OK ) {
+        $name = $_FILES['lead_image']['name'][$key];
+        $target_file = basename($name);
+        // Select file type
+        $imageFileType = strtolower(pathinfo($target_file,PATHINFO_EXTENSION));
+        // Valid file extensions
+        $extensions_arr = array("jpg","jpeg","png","gif");
+        // Check extension
+        if( in_array($imageFileType,$extensions_arr) ){
+          // Convert to base64 
+          if ($imageFileType == 'jpeg') {
+            $imageFileType = 'jpg';
+          }
+          $image_base64 = base64_encode(file_get_contents($lead_image) );
+          $image = 'data:image/'.$imageFileType.';base64,'.$image_base64;
+          // Insert record
+          $wpdb->insert( 
+            $wpdb->prefix.'mentor_leads_images', 
+            array( 
+              'LID' => $LID, 
+              'image' => $image,
+            )
+          );
+        }
       }
     }
   }
   $register_date = date('d/m/Y h:i a');
   $date = date('d/m/Y',strtotime($date));
   // notify to admins emails
-  $body = "Un nuevo lead se ha registrado a las: {$register_date}
-    <table style='border:initial;'>
-      <tr>
-        <td>Nombre:</td><td>{$fullname}</td>
-      </tr>
-      <tr>
-        <td>Email:</td><td>{$email}</td>
-      </tr>
-      <tr>
-        <td>Teléfono:</td><td>{$phone}</td>
-      </tr>
-      <tr>
-        <td>País:</td><td>{$crmcountries[$country]}</td>
-      </tr>
-      <tr>
-        <td>Ciudad:</td><td>{$city}</td>
-      </tr>
-      <tr>
-        <td>Cirugía de Interes:</td><td>{$reason}</td>
-      </tr>
-      <tr>
-        <td>Fecha de Interes:</td><td>{$date}</td>
-      </tr>
-      <tr>
-        <td>Comentario:</td><td>{$comments}</td>
-      </tr>
-    </table>
-    <p>Fusce a hendrerit ipsum. Vestibulum at enim urna. Suspendisse potenti. Nunc scelerisque non magna eget venenatis. Donec vitae tincidunt mauris, mollis bibendum arcu. Donec eget dui in risus lobortis pellentesque id pretium nibh. Proin et massa non metus condimentum tempor vel in ante. Praesent turpis nisi, pulvinar in laoreet sed, congue eu nunc.<p>
-  ";
-  mentor_email(get_option('mentor_crm_admin_notify'),get_option('mentor_crm_cliente_name').' CRM - Nuevo Lead: '.$fullname.' - #'.$LID,$body);
+  $tipo_cita = array(1=>'TELE ORIENTACIÓN MÉDICA',2=>'PRESENCIAL',3=>'PREANESTESIA');
+  $tipo_cita = $tipo_cita[$_POST['tag-consultatipo']];
+  ob_start();
+  include MENTOR_CRM_PATH.'/inc/emails/admin-new-lead.php';
+  $new_lead = ob_get_clean();
+  mentor_email(get_option('mentor_crm_admin_notify'),get_option('mentor_crm_cliente_name').' CRM - Nuevo Lead: '.$fullname.' - #'.$LID,$new_lead);
   // notify to user email
-  $body = "<b>Hola {$fullname}</b>
-  <p>Fusce a hendrerit ipsum. Vestibulum at enim urna. Suspendisse potenti. Nunc scelerisque non magna eget venenatis. Donec vitae tincidunt mauris, mollis bibendum arcu. Donec eget dui in risus lobortis pellentesque id pretium nibh. Proin et massa non metus condimentum tempor vel in ante. Praesent turpis nisi, pulvinar in laoreet sed, congue eu nunc.<p>
-    <a href='{$payment_url}' style='
-    margin: 20px auto;
-    display: block;
-    height: 40px;
-    line-height: 40px;
-    background-color: rgb(26, 69, 148);
-    font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
-    font-weight: 400;
-    font-size: 14px;
-    color: #fff;
-    cursor: pointer;
-    border:none;
-    border-radius: 4px;
-    padding: 0px 16px;
-    text-decoration:none !important;
-    width: 115px;
-    text-align: center;' target='blank'>Paga con <strong>Wompi</strong></a>
-    <p>Fusce a hendrerit ipsum. Vestibulum at enim urna. Suspendisse potenti. Nunc scelerisque non magna eget venenatis. Donec vitae tincidunt mauris, mollis bibendum arcu. Donec eget dui in risus lobortis pellentesque id pretium nibh. Proin et massa non metus condimentum tempor vel in ante. Praesent turpis nisi, pulvinar in laoreet sed, congue eu nunc.</p>
-  ";
-  mentor_email($email,get_option('mentor_crm_cliente_name').' - Solicitud #'.$LID,$body);
+  ob_start();
+  include MENTOR_CRM_PATH.'/inc/emails/welcome-lead.php';
+  $welcome = ob_get_clean();
+  mentor_email($email,get_option('mentor_crm_cliente_name').' - Solicitud #'.$LID,$welcome);
   $return = array('msg'=>'ok','payment_url'=>$payment_url);
   wp_send_json($return);
 }
