@@ -178,36 +178,43 @@ if (!function_exists('shortcode_text_crm')) {
  * @return int
  */
 if (!function_exists('mentor_email_calendar')) {
-    function mentor_email_calendar($data = array()){
-        $start_timestamp = strtotime('31-01-2019');
-        $end_timestamp = strtotime('31-02-2019');
-        $rest_name = 'test locatio';
-        $cust_email = $customer_name = $from_email = 'admin@mediacore.com.ar';
-        $restaurant_city = 'Buenos Aires';
-        $ics_reservation_id = $start_timestamp.'-'.$from_email;
-
-        $i_calendar="BEGIN:VCALENDAR
-        PRODID:-//Microsoft Corporation//Outlook 10.0 MIMEDIR//EN
-        VERSION:2.0
-        CALSCALE:GREGORIAN
-        METHOD:REQUEST
-        BEGIN:VEVENT
-        DTSTART:".$start_timestamp."
-        DTEND:".$end_timestamp."
-        DTSTAMP:".$start_timestamp."
-        ORGANIZER;CN=".$rest_name.":mailto:".$from_email."
-        UID:".$ics_reservation_id."
-        ATTENDEE;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN=".$customer_name.":mailto:".$cust_email."
-        DESCRIPTION:test
-        LOCATION:".$restaurant_city."
-        SEQUENCE:0
-        STATUS:CONFIRMED
-        SUMMARY:SI SE PUEDE FABIAN XD
-        TRANSP:OPAQUE
-        END:VEVENT
-        END:VCALENDAR";
+    function mentor_email_calendar($data = null){
+        if (!is_array($data))
+            return false;
+        $client_name = get_option('mentor_crm_cliente_name');
+        $start_timestamp = $data['start_timestamp'];
+        $end_timestamp = $data['end_timestamp'];
+        $date_name = $client_name;//.$data['date_name']
+        $customer_email = $data['customer_email'];
+        $customer_name = $data['customer_name'];
+        $from_email = explode(',', get_option('mentor_crm_admin_notify'))[0];
+        $costumer_city = $data['costumer_city'];
+        $ics_reservation_id = time().'-'.$from_email;
+        $description = "Tu cita será: ".date('d-m-Y h:i a', strtotime($data['date_standar']));
+$i_calendar = "BEGIN:VCALENDAR
+PRODID:-//Microsoft Corporation//Outlook 10.0 MIMEDIR//EN
+VERSION:2.0
+CALSCALE:GREGORIAN
+METHOD:REQUEST
+BEGIN:VEVENT
+DTSTART:{$start_timestamp}
+DTEND:{$end_timestamp}
+DTSTAMP:{$start_timestamp}
+ORGANIZER;CN={$date_name}:mailto:{$from_email}
+UID:{$ics_reservation_id}
+ATTENDEE;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN={$customer_name}:mailto:{$customer_email}
+DESCRIPTION: {$description}
+LOCATION: {$costumer_city}
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY: {$description}
+TRANSP:OPAQUE
+END:VEVENT
+END:VCALENDAR";
+        return $i_calendar;
     }
 }
+
 /**
  * mentor_email.
  *
@@ -220,10 +227,10 @@ if (!function_exists('mentor_email_calendar')) {
  */
 if (!function_exists('mentor_email')) {
     function mentor_email($to,$subject,$body,$include = array(),$lid = null,$headers = null){
-        global $wpdb,$phpmailer;
+        global $wpdb,$phpmailer,$crmcountries;
         $logo = get_option('mentor_crm_logo');
         $site_url = home_url();
-        $first_admin = explode(',', get_option('mentor_crm_admin_notify'));
+        $first_admin = explode(',', get_option('mentor_crm_admin_notify'))[0];
         $client_name = get_option('mentor_crm_cliente_name');
         $year = date('Y');
         $body_email = "<div style='margin:0;font-family: Arial, Helvetica, sans-serif;background: #f7f5ff;width: 100%;height: 100%;box-sizing:border-box;'>
@@ -238,7 +245,12 @@ if (!function_exists('mentor_email')) {
                     </div>
                     <div style='width: 100%;padding:30px;background: #e0dede;text-align:center;box-sizing: border-box;'>
                         <p><b>{$client_name} &copy; {$year}</b></p>
-                        <p style='font-size: 80%;color: #636363;box-sizing:border-box;'>Este correo y cualquier archivo transmitidos con él son confidenciales y previsto solamente para el uso del individuo o de la entidad a quienes se tratan. Si UD. ha recibido este correo por error por favor notificar a {$first_admin} Por favor considere que cualquier opinión presentada en este correo es solamente la del autor y no representa necesariamente la opinión de {$client_name} Finalmente, el receptor debe comprobar este correo y cualquier anexo del mismo para identificar la presencia de virus. La compañía no acepta ninguna responsabilidad por ningún daño causado por algún virus transmitido en este correo.</p>
+                        <p>Información de contacto:<br>
+                        PBX: +(571) 743 5955 | WhatsApp: +(57) 317 3320876 | Cra. 15 # 83 - 33<br>
+                        www.clinicadhara.com
+                        </p>
+                        <p style='font-size: 80%;color: #636363;box-sizing:border-box;'>Este correo y cualquier archivo transmitidos con él son confidenciales y previsto solamente para el uso del individuo o de la entidad a quienes se tratan. Si UD. ha recibido este correo por error por favor notificar a {$first_admin} Por favor considere que cualquier opinión presentada en este correo es solamente la del autor y no representa necesariamente la opinión de {$client_name} Finalmente, el receptor debe comprobar este correo y cualquier anexo del mismo para identificar la presencia de virus. La compañía no acepta ninguna responsabilidad por ningún daño causado por algún virus transmitido en este correo.
+                        </p>
                     </div>
                 </div>
                 </div>";
@@ -278,12 +290,25 @@ if (!function_exists('mentor_email')) {
         }
         if (in_array(2, $include)) {
             if (!empty($lid)) {
-                $calendar_file = mentor_email_calendar($lid);
+                $lead_data = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}mentor_leads WHERE LID = {$lid}");
+                //$timestamp_lead = .'T'.str_replace(':','',$lead_data->time);
+                $timestamp_lead = date('Ymd\THis',strtotime($lead_data->date.' '.$lead_data->time));
+                $data_icard = array(
+                    'start_timestamp' => $timestamp_lead,
+                    'end_timestamp' => $timestamp_lead,
+                    'date_name' => ' - Cita confirmada: '.$lead_data->date.' '.$lead_data->time,
+                    'customer_email' => $lead_data->email,
+                    'customer_name' => $lead_data->fullname,
+                    'costumer_city' => $crmcountries[$lead_data->country],
+                    'date_standar' => $lead_data->date.' '.$lead_data->time
+                );
+                $calendar_file = mentor_email_calendar($data_icard);
+                //remove_action( 'wp_footer', array( $my_class, 'class_function_being_removed' ) );
                 add_action( 'phpmailer_init', function(&$phpmailer)use($calendar_file){
                     $phpmailer->SMTPKeepAlive = true;
                     $phpmailer->IsHTML(true);
-                    $phpmailer->addStringAttachment($data,$name);
-                    $mail->addStringAttachment($calendar_file, 'calendar_file.ics');
+                    //$phpmailer->addStringAttachment($data,$name);
+                    $phpmailer->addStringAttachment($calendar_file,time().'-calendar_file.ics');
                 });
             }
         }
