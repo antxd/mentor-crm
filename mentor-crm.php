@@ -47,6 +47,7 @@ function install_mentor_crm(){
             `birthdate` date DEFAULT NULL,
             `email` varchar(100) DEFAULT NULL,
             `phone` varchar(30) DEFAULT NULL,
+            `phone_mobile` varchar(30) DEFAULT NULL,
             `country` varchar(6) DEFAULT NULL,
             `city` varchar(100) DEFAULT NULL,
             `step_ID` tinyint(4) DEFAULT '0',
