@@ -10,7 +10,7 @@
     <td>Teléfono:</td><td><?php echo $phone; ?></td>
   </tr>
   <tr>
-    <td>País:</td><td><?php echo $crmcountries[$country]; ?></td>
+    <td>País:</td><td><?php echo $country; ?></td>
   </tr>
   <tr>
     <td>Ciudad:</td><td><?php echo $city; ?></td>
@@ -22,7 +22,7 @@
     <td>Fecha de Interes:</td><td><?php echo $date; ?></td>
   </tr>
   <tr>
-    <td>Comentario:</td><td><?php echo $comments; ?></td>
+    <td>Comentario:</td><td><?php echo $lead_comment; ?></td>
   </tr>
   <tr>
     <td>Típo de Consulta:</td><td><?php echo $tipo_cita; ?></td>

@@ -39,10 +39,22 @@ h1.lead-title {
     background: <?php echo $tag_color; ?> !important;
 }
 .payment_state_label {
-    background: <?php echo $tag_color; ?> !important;;
+    background: <?php echo $tag_color; ?> !important;
+}
+.datepicker-here {
+    background: #fff !important;
+}
+.datepicker--day-name {
+    color: <?php echo $tag_color; ?> !important;
+}
+.datepicker--cell.-current- {
+    color: <?php echo $tag_color; ?> !important;
+}
+.datepicker--cell.-selected-, .datepicker--cell.-selected-.-current- {
+    background: <?php echo $tag_color; ?> !important;
 }
 </style>
-<div class="wrap mentor-crm-wrap">
+<div class="mentor-crm-wrap">
       <?php include 'crm-header.php'; ?>
       <div class="mentor-crm-box-lead mentor-crm-box crm-row">
           <h1 class="lead-title"><?php echo ucwords($lead_title); ?></h1>
@@ -86,7 +98,7 @@ h1.lead-title {
                   <div class="mentor-crm-detail-content crm-row">
                     <div class="crm-col-50 form-wrap">
                       <label><?php echo $booking_date_label; ?></label>
-                      <input type="date" name="date" value="<?php echo $lead->date; ?>">
+                      <input type="text" name="date" value="<?php echo $lead->date; ?>" class="datepicker-here" data-language='es' data-date-format="yyyy-mm-dd" readonly>
                     </div>
                     <div class="crm-col-50 form-wrap">
                       <label><?php echo $booking_time_label; ?></label>
@@ -296,6 +308,7 @@ jQuery(document).ready(function($){
           $('#reference-payment').val(data.reference)
           $('#state-payment').val(data.state)
           order_cost.set(parseInt(data.amount))
+          $('#order-cost').trigger('change')
           $('.mentor-payment-editor').slideDown()
           $('html,body').animate({
                   scrollTop: $('.mentor-payment-editor').offset().top - 100

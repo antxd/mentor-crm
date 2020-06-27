@@ -4,7 +4,7 @@
 <p>Doctor: <?php echo $manager_name; ?></p>
 <p>Teléfono: <?php echo $manager_phone; ?></p>
 <p>Dirección: Cra 15 # 83 – 33, Bogotá – Colombia</p>
-<p style="text-align: justify;">
+<p style='text-align: justify;'>
 	Nos vemos pronto. Ten a mano las preguntas, dudas e inquietudes. Asiste a tu cita puntualmente.
 	No atenderemos pacientes que acudan tarde. Para citas presenciales es obligatorio el uso de
 	tapabocas, acudir sin acompañante exceptuando a menores de edad, sin sospecha de estados

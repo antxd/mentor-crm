@@ -156,7 +156,7 @@ if (!function_exists('make_payment_checkout')) {
       $form = '<form method="post" action="'.ENDPOINT_PAYU.'" name="payulatam_online_payment" id="payulatam_online_payment">
                   <input name="merchantId"    type="hidden"  value="'.$payulatam_merchantid.'">
                   <input name="accountId"     type="hidden"  value="'.$payulatam_account.'">
-                  <input name="description"   type="hidden"  value="CITA - '.$referenceCode.'">
+                  <input name="description"   type="hidden"  value="CITA -'. $referenceCode.'">
                   <input name="referenceCode" type="hidden"  value="'.$referenceCode.'">
                   <input name="amount"        type="hidden"  value="'.$amount.'">
                   <input name="tax"           type="hidden"  value="0" >

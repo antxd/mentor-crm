@@ -19,6 +19,6 @@
 	width: 115px;
 	text-align: center;' target='blank'>Paga con <strong>Wompi</strong></a>
 </p>
-<p style="text-align: center;"><small>Ignora el mensaje si ya realizaste el pago.</small></p>
+<p style='text-align: center;'><small>Ignora el mensaje si ya realizaste el pago.</small></p>
 <br>
 <p>Equipo Médico Especialista Clínica Dhara.</p>

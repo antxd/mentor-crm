@@ -2,8 +2,9 @@
 .crm-hidden{display:none!important;}
 .text-right{text-align: right}
 .text-center{text-align: center}
-.mentor-crm-wrap{
+.mentor-crm-wrap {
     font-family: 'Oswald', sans-serif;
+    margin-right: 1.2rem;
 }
 .mentor-crm-wrap h1, .mentor-crm-wrap>h2:first-child {
     font-size: 23px;

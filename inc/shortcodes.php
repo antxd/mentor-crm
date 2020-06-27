@@ -8,6 +8,13 @@ function mentor_lead_capture_form( $atts ) {
 	//return "foo = {$a['foo']}";
 	ob_start();
     $terms_url = get_option('mentor_crm_terms_url');
+    wp_enqueue_style( 'datepicker-mentor-crm', plugins_url('/'.MENTOR_CRM_FOLDER.'/assets/datepicker.min.css'),false,'2.2.3');
+    wp_enqueue_script( 'datepicker', plugins_url('/'.MENTOR_CRM_FOLDER.'/assets/datepicker.min.js' ), array(), '2.2.3' );
+    wp_enqueue_script( 'datepicker-en', plugins_url('/'.MENTOR_CRM_FOLDER.'/assets/datepicker.en.js' ), array(), '2.2.3' );
+    wp_enqueue_script( 'datepicker-es', plugins_url('/'.MENTOR_CRM_FOLDER.'/assets/datepicker.es.js' ), array(), '2.2.3' );
+    wp_enqueue_script( 'form-jquery', plugins_url('/'.MENTOR_CRM_FOLDER.'/assets/jquery.form.min.js'), array(), '3.51.0', true);
+    wp_enqueue_script( 'mentor-crm', plugins_url('/'.MENTOR_CRM_FOLDER.'/assets/mentor.crm.js'), array(), '1.0.0', true);
+    //wp_enqueue_script( 'autoNumeric', plugins_url('/'.MENTOR_CRM_FOLDER.'/assets/autoNumeric.min.js' ), array(), '4.1.0' );
 	?>
 <style type="text/css">
 .mentor-lead-capture-form *,.crm-row * {
@@ -269,6 +276,117 @@ function mentor_lead_capture_form( $atts ) {
     white-space: nowrap;
     overflow: hidden;
 }
+.datepicker--day-name {
+    color: #ff0000 !important;
+}
+.datepicker--cell.-current- {
+    color: #ff0000 !important;
+}
+.datepicker--cell.-selected-, .datepicker--cell.-selected-.-current- {
+    background: #ff0000 !important;
+}
+.mentor-crm-modal-response_loader {
+    display: none;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100vh;
+    z-index: 1900;
+    background: rgba(255, 255, 255, 0.8);
+}
+.mentor-crm-modal-response_loader .mentor-crm-modal-body {
+    border: initial;
+    background: transparent;
+}
+.lds-spinner {
+  color: #fff;
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+.lds-spinner div {
+  transform-origin: 40px 40px;
+  animation: lds-spinner 1.2s linear infinite;
+}
+.lds-spinner div:after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 3px;
+  left: 37px;
+  width: 6px;
+  height: 18px;
+  border-radius: 20%;
+  background: #ff0000;
+}
+.lds-spinner div:nth-child(1) {
+  transform: rotate(0deg);
+  animation-delay: -1.1s;
+}
+.lds-spinner div:nth-child(2) {
+  transform: rotate(30deg);
+  animation-delay: -1s;
+}
+.lds-spinner div:nth-child(3) {
+  transform: rotate(60deg);
+  animation-delay: -0.9s;
+}
+.lds-spinner div:nth-child(4) {h
+  transform: rotate(90deg);
+  animation-delay: -0.8s;
+}
+.lds-spinner div:nth-child(5) {
+  transform: rotate(120deg);
+  animation-delay: -0.7s;
+}
+.lds-spinner div:nth-child(6) {
+  transform: rotate(150deg);
+  animation-delay: -0.6s;
+}
+.lds-spinner div:nth-child(7) {
+  transform: rotate(180deg);
+  animation-delay: -0.5s;
+}
+.lds-spinner div:nth-child(8) {
+  transform: rotate(210deg);
+  animation-delay: -0.4s;
+}
+.lds-spinner div:nth-child(9) {
+  transform: rotate(240deg);
+  animation-delay: -0.3s;
+}
+.lds-spinner div:nth-child(10) {
+  transform: rotate(270deg);
+  animation-delay: -0.2s;
+}
+.lds-spinner div:nth-child(11) {
+  transform: rotate(300deg);
+  animation-delay: -0.1s;
+}
+.lds-spinner div:nth-child(12) {
+  transform: rotate(330deg);
+  animation-delay: 0s;
+}
+@keyframes lds-spinner {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.loader_text {
+    color: #ff0000;
+    padding: 1.5em 0 1em;
+    font-size: 2em;
+}
+.loader_text h1 {
+    color: #ff0000;
+    margin-top: 1rem;
+    font-weight: 600;
+}
 </style>
 <div class="mentor-lead-capture-form">
 	<form class="mentor-lead-capture-form-ajax">
@@ -311,7 +429,6 @@ function mentor_lead_capture_form( $atts ) {
             <div class="crm-col-50 form-wrap">
                 <input type="text" name="city" placeholder="CIUDAD &#42;" required="true">
             </div>
-            
 		</div>
 	</div>
 	<div class="mentor-lead-box">
@@ -332,7 +449,7 @@ function mentor_lead_capture_form( $atts ) {
 				
 				<div class="crm-col form-wrap inline-input crm-text-center crmdate">
                 <label style="padding-right: 5px;">FECHA</label>
-                <input type="date" name="date" required="true" min="<?php echo date('Y-m-d',strtotime("+1 days")); ?>">
+                <input type="text" name="date" class="date_here" data-language='es' data-date-format="yyyy-mm-dd" required="true" readonly>
             </div>
             </div>
 		</div>
@@ -383,80 +500,34 @@ function mentor_lead_capture_form( $atts ) {
 	</div>
 	</form>
 </div>
+<div class="mentor-crm-modal-response_loader">
+    <div class="mentor-crm-modal-body">
+        <div class="loader_text">
+            Espera un momento con nosotros.<br>Tu solicitud está siendo enviada.
+            <h1><span id="dynamic_percent_mentor"></span></h1>
+        </div>
+        <div class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+    </div>
+</div>
 <div class="mentor-crm-modal-response">
 	<div class="mentor-crm-modal-body">
-        <button class="mentor-crm-modal-close">&times;</button>
+        <!-- <button class="mentor-crm-modal-close">&times;</button> -->
         <img src="<?php echo plugins_url('/'.MENTOR_CRM_FOLDER.'/assets/dhara-thanks.png'); ?>">
 		<h1>Gracias</h1>
 		<h2>Te contactaremos para confirmar tu cita.</h2>
 	</div>
 </div>
 <script type="text/javascript">
-jQuery(document).ready(function($){
-	$('input[name="tag-consultatipo"]').click(function(){
-		if ($(this).val() == 1) {
-			$('.mentor-crm-images-tag').slideDown()
-		}else{
-			$('.mentor-crm-images-tag').slideUp()
-		}
-	})
-    $('.mentor-crm-modal-close').click(function(){
-        $('.mentor-crm-modal-response').fadeOut()
-    })
-    $('#foto1').on('change',function(){
-        var fullPath = document.getElementById('foto1').value;
-        if (fullPath) {
-            var startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
-            var filename = fullPath.substring(startIndex);
-            if (filename.indexOf('\\') === 0 || filename.indexOf('/') === 0) {
-                filename = filename.substring(1);
-            }
-            $('#foto1_name').hide().text(filename).fadeIn()
-        }
-    })
-    $('#foto2').on('change',function(){
-        var fullPath = document.getElementById('foto2').value;
-        if (fullPath) {
-            var startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
-            var filename = fullPath.substring(startIndex);
-            if (filename.indexOf('\\') === 0 || filename.indexOf('/') === 0) {
-                filename = filename.substring(1);
-            }
-            $('#foto2_name').hide().text(filename).fadeIn()
-        }
-    })
-    $('.select_file').click(function(){
-        $('#'+$(this).data('inputid')).trigger('click')
-        
-    })
-	$('.mentor-lead-capture-form-ajax').submit(function(){
-		var $this = $(this)
-		var data = new FormData($this[0])
-        $this.addClass('form-ajax-sending')
-		$.ajax({
-		    url: "<?php echo admin_url('admin-ajax.php'); ?>",
-		    data: data,
-		    cache: false,
-		    contentType: false,
-		    processData: false,
-		    method: 'POST',
-		    type: 'POST', // For jQuery < 1.9
-		    success: function(data){
-                if (data.msg == 'ok') {
-                    $this.trigger('reset')
-                    $('.mentor-crm-modal-response').fadeIn();
-                    $('#foto1_name,#foto2_name').hide().text('')
-                    setTimeout("location.href = '"+data.payment_url+"'",3000)
-                }else{
-                    alert('Error, intenta de nuevo.')
-                }
-                $this.removeClass('form-ajax-sending')
-                //console.log(data)        
-		    }
-		});
-		return false;
-	})
-})
+    // silent c:
+    //var make_phone0, make_phone1,js_plugin_url = "<?php echo plugins_url('/'.MENTOR_CRM_FOLDER.'/assets/' ); ?>";
+    var mentor_ajax_url = "<?php echo admin_url('admin-ajax.php'); ?>";
+    var needToConfirm = false;
+    window.onbeforeunload = confirmExit;
+    function confirmExit(){
+        if (needToConfirm)
+        return 'No cierre la ventana, hasta que finalice la carga / Do not close the window until the upload is complete';
+        //return message to display in dialog box;
+    }
 </script>
 	<?php
 	return ob_get_clean();

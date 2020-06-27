@@ -1,4 +1,16 @@
 <?php
+function MentorRemoveDir($target){
+    $directory = new RecursiveDirectoryIterator($target,  FilesystemIterator::SKIP_DOTS);
+    $files = new RecursiveIteratorIterator($directory, RecursiveIteratorIterator::CHILD_FIRST);
+    foreach ($files as $file) {
+        if (is_dir($file)) {
+            rmdir($file);
+        } else {
+            unlink($file);
+        }
+    }
+    rmdir($target);
+}
 /**
  * Generate a Unique String for Orders.
  *
@@ -233,65 +245,48 @@ if (!function_exists('mentor_email')) {
         $first_admin = explode(',', get_option('mentor_crm_admin_notify'))[0];
         $client_name = get_option('mentor_crm_cliente_name');
         $year = date('Y');
-        $body_email = "<div style='margin:0;font-family: Arial, Helvetica, sans-serif;background: #f7f5ff;width: 100%;height: 100%;box-sizing:border-box;'>
-                <div style='max-width: 600px;display: block;margin: 0 auto;padding: 30px;box-sizing:border-box;'>
-                    <div style='width: 100%;height: 80px;background: #fff;border-bottom:2px solid #e0dede;box-sizing:border-box;'>
-                        <a href='{$site_url}' style='display: block;margin: 0 auto;width:200px;padding:10px;box-sizing:border-box;' title='{$client_name}'>
-                        <img src='{$logo}' style='width: 100%;box-sizing:border-box;' alt='{$client_name}'/>
-                        </a>
-                    </div>
-                    <div style='background:#fff;padding:30px 50px;width:100%;display:block;max-width: 100%;box-sizing: border-box;'>
-                    {$body}
-                    </div>
-                    <div style='width: 100%;padding:30px;background: #e0dede;text-align:center;box-sizing: border-box;'>
-                        <p><b>{$client_name} &copy; {$year}</b></p>
-                        <p>Información de contacto:<br>
-                        PBX: +(571) 743 5955 | WhatsApp: +(57) 317 3320876 | Cra. 15 # 83 - 33<br>
-                        www.clinicadhara.com
-                        </p>
-                        <p style='font-size: 80%;color: #636363;box-sizing:border-box;'>Este correo y cualquier archivo transmitidos con él son confidenciales y previsto solamente para el uso del individuo o de la entidad a quienes se tratan. Si UD. ha recibido este correo por error por favor notificar a {$first_admin} Por favor considere que cualquier opinión presentada en este correo es solamente la del autor y no representa necesariamente la opinión de {$client_name} Finalmente, el receptor debe comprobar este correo y cualquier anexo del mismo para identificar la presencia de virus. La compañía no acepta ninguna responsabilidad por ningún daño causado por algún virus transmitido en este correo.
-                        </p>
-                    </div>
+        $body_email = "
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta name='viewport' content='initial-scale=1.0'>
+            <meta name='x-apple-disable-message-reformatting'>
+            <meta http-equiv='X-UA-Compatible' content='E=edge'>
+        </head>
+        <body>
+        <div style='margin:0;font-family: Arial, Helvetica, sans-serif;background: #f7f5ff;width: 100%;height: 100%;box-sizing:border-box;'>
+            <div style='max-width: 720px;display: block;margin: 0 auto;padding: 30px;box-sizing:border-box;'>
+                <div style='width: 100%;height: 80px;background: #fff;border-bottom:2px solid #e0dede;box-sizing:border-box;'>
+                    <a href='{$site_url}' style='display: block;margin: 0 auto;width:200px;padding:10px;box-sizing:border-box;' title='{$client_name}'>
+                    <img src='{$logo}' style='width: 100%;box-sizing:border-box;' alt='{$client_name}'/>
+                    </a>
                 </div>
-                </div>";
-        if (in_array(1, $include)) {
-            if (!empty($lid)) {
-                $imgs_src = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}mentor_leads_images WHERE LID = {$lid}");
-                add_action( 'phpmailer_init', function(&$phpmailer)use($imgs_src){
-                    $phpmailer->SMTPKeepAlive = true;
-                    $phpmailer->IsHTML(true);
-                    foreach ($imgs_src as $key => $img) {            
-                        $file = $img->image;
-                        $uid = 'SecureFile'.$img->LIMGID; //will map it to this UID
-                        $finfo = new finfo(FILEINFO_MIME);
-                        $extension = explode('/', mime_content_type($file))[1];
-                        $name = 'SecureFile'.$img->LIMGID.'.'.$extension;
-                        switch ($extension) {
-                            case 'gif':
-                                $img = str_replace('data:image/gif;base64,', '', $file);
-                                break;
-                            case 'jpeg':
-                                $img = str_replace('data:image/jpeg;base64,', '', $file);
-                                break;
-                            case 'jpg':
-                                $img = str_replace('data:image/jpg;base64,', '', $file);
-                                break;
-                            default:
-                                $img = str_replace('data:image/png;base64,', '', $file);
-                                break;
-                        }
-                        $img = str_replace(' ', '+', $img);
-                        $data = base64_decode($img);
-                        //$phpmailer->addStringEmbeddedImage($data,$uid,$name);
-                        $phpmailer->addStringAttachment($data,$name);     
-                    }
-                });
-            }
+                <div style='background:#fff;padding:30px;width:100%;display:block;max-width: 100%;box-sizing: border-box;'>
+                {$body}
+                </div>
+                <div style='width: 100%;padding:30px;background: #e0dede;text-align:center;box-sizing: border-box;'>
+                    <p><b>{$client_name} &copy; {$year}</b></p>
+                    <p>Información de contacto:<br>
+                    PBX: +(571) 743 5955 | WhatsApp: +(57) 317 3320876 | Cra. 15 # 83 - 33<br>
+                    www.clinicadhara.com
+                    </p>
+                    <p style='font-size: 80%;color: #636363;box-sizing:border-box;'>Este correo y cualquier archivo transmitidos con él son confidenciales y previsto solamente para el uso del individuo o de la entidad a quienes se tratan. Si UD. ha recibido este correo por error por favor notificar a {$first_admin} Por favor considere que cualquier opinión presentada en este correo es solamente la del autor y no representa necesariamente la opinión de {$client_name} Finalmente, el receptor debe comprobar este correo y cualquier anexo del mismo para identificar la presencia de virus. La compañía no acepta ninguna responsabilidad por ningún daño causado por algún virus transmitido en este correo.
+                    </p>
+                </div>
+            </div>
+        </div>
+        </body>
+        </html>";
+
+        if (empty($headers)) {
+           $headers = array('Content-Type: text/html; charset=UTF-8');
         }
-        if (in_array(2, $include)) {
-            if (!empty($lid)) {
+        add_action( 'phpmailer_init', function(&$phpmailer)use($lid,$wpdb,$crmcountries,$include){
+            $phpmailer->ClearAttachments();
+            $phpmailer->SMTPKeepAlive = true;
+            $phpmailer->IsHTML(true);
+            if (in_array(2, $include)) {
                 $lead_data = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}mentor_leads WHERE LID = {$lid}");
-                //$timestamp_lead = .'T'.str_replace(':','',$lead_data->time);
                 $timestamp_lead = date('Ymd\THis',strtotime($lead_data->date.' '.$lead_data->time));
                 $data_icard = array(
                     'start_timestamp' => $timestamp_lead,
@@ -303,19 +298,21 @@ if (!function_exists('mentor_email')) {
                     'date_standar' => $lead_data->date.' '.$lead_data->time
                 );
                 $calendar_file = mentor_email_calendar($data_icard);
-                //remove_action( 'wp_footer', array( $my_class, 'class_function_being_removed' ) );
-                add_action( 'phpmailer_init', function(&$phpmailer)use($calendar_file){
-                    $phpmailer->SMTPKeepAlive = true;
-                    $phpmailer->IsHTML(true);
-                    //$phpmailer->addStringAttachment($data,$name);
-                    $phpmailer->addStringAttachment($calendar_file,time().'-calendar_file.ics');
-                });
+                $phpmailer->addStringAttachment($calendar_file,time().'-calendar_file.ics');
             }
-        }
-        if (empty($headers)) {
-           $headers = array('Content-Type: text/html; charset=UTF-8');
-           //,'From: Dev Mentor <dev@bementor.co>'
-        }
+            if (in_array(1, $include)) {
+                $upload = wp_upload_dir();
+                $upload_dir = $upload['basedir'];
+                $upload_dir = $upload_dir . '/mentor-crm-private/'.$lid;
+                if (is_dir($upload_dir)) {
+                    foreach(new DirectoryIterator($upload_dir) as $item) {
+                        if (!$item->isDot() && $item->isFile()) {
+                           $phpmailer->addAttachment(trailingslashit($upload_dir).$item->getFilename(),$item->getFilename());
+                        }
+                    }
+                }
+            }
+        });
         wp_mail($to,$subject,$body_email,$headers);
     }
 }

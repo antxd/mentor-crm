@@ -23,8 +23,11 @@ if (!empty($_GET['sid'])) {
 .payment_state_label {
     background: <?php echo $tag_color; ?> !important;;
 }
+.button.mentor-crm-btn-delete {
+    margin-left: .5rem;
+}
 </style>
-  <div class="wrap mentor-crm-wrap">
+  <div class="mentor-crm-wrap">
       <?php include 'crm-header.php'; ?>
       <div class="mentor-crm-box">
           <div class="mentor-crm-tags-filter">
@@ -86,6 +89,9 @@ if (!empty($_GET['sid'])) {
                                     <td class="text-center">
                                       <a href="'.admin_url('admin.php?page=mentor-crm-admin').'&lid='.$lead->LID.'" class="mentor-crm-btn-edit" style="background-color:'.$tag_color.'">
                                           <span class="dashicons dashicons-edit"></span>
+                                      </a>
+                                      <a href="'.admin_url('admin.php?page=mentor-crm-admin').'&delete-lid='.$lead->LID.'" class="button mentor-crm-btn-delete" onclick="return confirm(\'¿Quieres eliminar Lead #'.$lead->LID.'?\')">
+                                          Eliminar
                                       </a>
                                     </td>
                                   </tr>';
