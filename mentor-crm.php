@@ -273,7 +273,7 @@ function mentor_lead_detail() {
 	}
 	if (!empty($_POST['payment_button'])) {
 			//send last payment button to lead
-			$reference_hash = $wpdb->get_var("SELECT reference FROM {$wpdb->prefix}mentor_orders WHERE LID=".$_POST['lid']);
+			$reference_hash = $wpdb->get_var("SELECT reference FROM {$wpdb->prefix}mentor_orders WHERE state = 1 AND LID=".$_POST['lid']);
 			$lead = $wpdb->get_row("SELECT email,fullname FROM {$wpdb->prefix}mentor_leads WHERE LID=".$_POST['lid']);
 			$fullname = $lead->fullname;
 			$email = $lead->email;
